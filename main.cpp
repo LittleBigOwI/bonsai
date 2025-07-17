@@ -1,21 +1,28 @@
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/dom/elements.hpp>
-#include <ftxui/screen/screen.hpp>
-#include <iostream>
 
 int main() {
-    using namespace ftxui;
-
-    Element document = hbox({
-            text("left") | border,
-            text("middle") | border | flex,
-            text("right") | border
+    auto sidebar_renderer = ftxui::Renderer([&] {
+        return ftxui::vbox({
+            ftxui::text("Hello World") | ftxui::bold | ftxui::center,
+        }) | ftxui::border | size(ftxui::WIDTH, ftxui::EQUAL, 30); // Fixed width sidebar
     });
 
-    auto screen = Screen::Create(
-            Dimension::Full(),
-            Dimension::Fit(document)
-    );
+    auto right_pane = ftxui::Renderer([&] {
+        return ftxui::vbox({
+            ftxui::text("Main Content Area") | ftxui::bold | ftxui::center,
+            ftxui::filler(),
+        }) | ftxui::border;
+    });
 
-    Render(screen, document);
-    screen.Print();
+    auto app = ftxui::Renderer([&] {
+        return ftxui::hbox({
+            sidebar_renderer->Render(),
+            right_pane->Render() | ftxui::flex,
+        });
+    });
+
+    ftxui::ScreenInteractive::Fullscreen().Loop(app);
 }
+
