@@ -3,3 +3,6 @@ build/
 
 # editor
 .vscode/
+
+# extra
+tests/

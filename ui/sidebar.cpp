@@ -94,7 +94,7 @@ namespace ui {
                 std::string icon_str;
 
                 if (label == "..") {
-                    icon_str = "⮌";
+                    icon_str = "";
                 } else {
                     icon_str = is_selected
                         ? (is_dir ? SIDEBAR_SELECTED_FOLDER_ICON : SIDEBAR_SELECTED_FILE_ICON)
@@ -107,7 +107,9 @@ namespace ui {
                 auto row = hbox({
                     icon,
                     text(" "),
-                    label_text,
+                    label_text | size(WIDTH, LESS_THAN, width_ - 10),
+                    filler(),
+                    label == ".." ? text("") : text("?%") | color(Color::GrayDark)
                 });
 
                 if (is_selected) {
@@ -126,7 +128,7 @@ namespace ui {
                 if (is_dir) {
                     fs::path new_path;
 
-                    if (selected_entry == ".." || selected_ == 0) {
+                    if (selected_entry == "..") {
                         new_path = fs::path(path_).parent_path();
                     } else {
                         selected_ = 1;
