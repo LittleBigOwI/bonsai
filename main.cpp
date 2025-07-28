@@ -1,30 +1,29 @@
-#include <ftxui/component/component.hpp>
 #include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/component.hpp>
 #include <ftxui/dom/elements.hpp>
+#include "ui/sidebar.hpp"
 
 #define SIDEBAR_WIDTH 50
+#define SIDEBAR_PATH "/"
 
 int main() {
-    auto sidebar_renderer = ftxui::Renderer([&] {
-        return ftxui::vbox({
-            ftxui::text("Hello World") | ftxui::bold | ftxui::center,
-        }) | ftxui::border | size(ftxui::WIDTH, ftxui::EQUAL, SIDEBAR_WIDTH);
+    using namespace ftxui;
+
+    auto screen = ScreenInteractive::Fullscreen();
+
+    auto right_pane_renderer = Renderer([] {
+        return vbox({
+            text("Main Content Area") | center,
+            filler(),
+        }) | border | flex;
     });
 
-    auto right_pane = ftxui::Renderer([&] {
-        return ftxui::vbox({
-            ftxui::text("Main Content Area") | ftxui::bold | ftxui::center,
-            ftxui::filler(),
-        }) | ftxui::border;
+    auto sidebar = ui::RenderSidebar(SIDEBAR_PATH, SIDEBAR_WIDTH);
+
+    auto app = Container::Horizontal({
+        sidebar,
+        right_pane_renderer,
     });
 
-    auto app = ftxui::Renderer([&] {
-        return ftxui::hbox({
-            sidebar_renderer->Render(),
-            right_pane->Render() | ftxui::flex,
-        });
-    });
-
-    ftxui::ScreenInteractive::Fullscreen().Loop(app);
+    screen.Loop(app);
 }
-
