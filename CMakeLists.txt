@@ -8,7 +8,9 @@ find_package(ftxui REQUIRED)
 
 add_executable(bonsai
     main.cpp
+    
     ui/sidebar.cpp
+    widgets/canvas_ext.cpp
 )
 
 target_link_libraries(bonsai
