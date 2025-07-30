@@ -36,7 +36,7 @@ int main() {
     int radius = 30;
 
     auto c = BonsaiCanvas(width, height);
-    c.DrawAngledPointEllipse(200, 200, 30, 30, 160);
+    c.DrawAngledPointEllipse(200, 200, 30, 30, 160, Color::Red);
 
     auto document = canvas(&c) | border;
     auto screen = Screen::Create(Dimension::Fit(document));

@@ -4,18 +4,48 @@
 
 constexpr auto nostyle = [](ftxui::Pixel &) {};
 
-void BonsaiCanvas::DrawAngledBlockEllipse(int x1, int y1, int r1, int r2, double max_angle_deg)
+void BonsaiCanvas::DrawAngledBlockCircle(int x, int y, int r, double angle)
 {
-    this->DrawAngledBlockEllipse(x1, y1, r1, r2, nostyle, max_angle_deg);
+    this->DrawAngledBlockEllipse(x, y, r, r, angle);
 }
 
-void BonsaiCanvas::DrawAngledBlockEllipse(int x, int y, int r1, int r2, const ftxui::Color &color, double max_angle_deg)
+void BonsaiCanvas::DrawAngledBlockCircle(int x, int y, int r, double angle, const ftxui::Color &color)
 {
-    this->DrawAngledBlockEllipse(x, y, r1, r2, [color](ftxui::Pixel &p)
-                                 { p.foreground_color = color; }, max_angle_deg);
+    this->DrawAngledBlockEllipse(x, y, r, r, angle, color);
 }
 
-void BonsaiCanvas::DrawAngledBlockEllipse(int x1, int y1, int r1, int r2, const Stylizer &s, double max_angle_deg)
+void BonsaiCanvas::DrawAngledBlockCircle(int x, int y, int r, double angle, const Stylizer &s)
+{
+    this->DrawAngledBlockEllipse(x, y, r, r, angle, s);
+}
+
+void BonsaiCanvas::DrawAngledPointCircle(int x, int y, int r, double angle)
+{
+    this->DrawAngledPointEllipse(x, y, r, r, angle);
+}
+
+void BonsaiCanvas::DrawAngledPointCircle(int x, int y, int r, double angle, const ftxui::Color &color)
+{
+    this->DrawAngledPointEllipse(x, y, r, r, angle, color);
+}
+
+void BonsaiCanvas::DrawAngledPointCircle(int x, int y, int r, double angle, const Stylizer &s)
+{
+    this->DrawAngledPointEllipse(x, y, r, r, angle, s);
+}
+
+void BonsaiCanvas::DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle)
+{
+    this->DrawAngledBlockEllipse(x, y, r1, r2, angle, nostyle);
+}
+
+void BonsaiCanvas::DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle, const ftxui::Color &color)
+{
+    this->DrawAngledBlockEllipse(x, y, r1, r2, angle, [color](ftxui::Pixel &p)
+                                 { p.foreground_color = color; });
+}
+
+void BonsaiCanvas::DrawAngledBlockEllipse(int x1, int y1, int r1, int r2, double angle, const Stylizer &s)
 {
     y1 /= 2;
     r2 /= 2;
@@ -26,7 +56,7 @@ void BonsaiCanvas::DrawAngledBlockEllipse(int x1, int y1, int r1, int r2, const 
     int dy = x * x;
     int err = dx + dy;
 
-    double max_angle_rad = max_angle_deg * M_PI / 180.0;
+    double max_angle_rad = angle * M_PI / 180.0;
 
     auto draw_if_within_angle = [&](int dx, int dy)
     {
@@ -64,19 +94,18 @@ void BonsaiCanvas::DrawAngledBlockEllipse(int x1, int y1, int r1, int r2, const 
     }
 }
 
-void BonsaiCanvas::DrawAngledPointEllipse(int x1, int y1, int r1, int r2, double max_angle_deg)
+void BonsaiCanvas::DrawAngledPointEllipse(int x, int y, int r1, int r2, double angle)
 {
-    this->DrawAngledPointEllipse(x1, y1, r1, r2, nostyle, max_angle_deg);
+    this->DrawAngledPointEllipse(x, y, r1, r2, angle, nostyle);
 }
 
-void BonsaiCanvas::DrawAngledPointEllipse(int x, int y, int r1, int r2, const ftxui::Color &color, double max_angle_deg)
+void BonsaiCanvas::DrawAngledPointEllipse(int x, int y, int r1, int r2, double angle, const ftxui::Color &color)
 {
-    this->DrawAngledPointEllipse(x, y, r1, r2, [color](ftxui::Pixel &p)
-                                 { p.foreground_color = color; }, max_angle_deg);
+    this->DrawAngledPointEllipse(x, y, r1, r2, angle, [color](ftxui::Pixel &p)
+                                 { p.foreground_color = color; });
 }
 
-void BonsaiCanvas::DrawAngledPointEllipse(int x1, int y1, int r1, int r2,
-                                          const Stylizer &s, double max_angle_deg)
+void BonsaiCanvas::DrawAngledPointEllipse(int x1, int y1, int r1, int r2, double angle, const Stylizer &s)
 {
     y1 /= 2;
     r2 /= 2;
@@ -87,7 +116,7 @@ void BonsaiCanvas::DrawAngledPointEllipse(int x1, int y1, int r1, int r2,
     int dy = x * x;
     int err = dx + dy;
 
-    double max_angle_rad = max_angle_deg * M_PI / 180.0;
+    double max_angle_rad = angle * M_PI / 180.0;
 
     auto draw_if_within_angle = [&](int dx, int dy)
     {
