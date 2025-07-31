@@ -33,9 +33,9 @@ int main() {
     int height = 400;
 
     auto c = BonsaiCanvas(width, height);
-    c.DrawAngledPointEllipseRing(150, 150, 60, 60, 30, 360, Color::Red);
-    c.DrawAngledPointEllipseRing(150, 150, 60, 60, 30, 180, Color::Blue);
-    c.DrawAngledPointEllipseRing(150, 150, 60, 60, 30, 60, Color::Green);
+    c.DrawAngledBlockEllipseRing(150, 150, 60, 60, 30, 360, Color::Red);
+    c.DrawAngledBlockEllipseRing(150, 150, 60, 60, 30, 180, Color::Blue);
+    c.DrawAngledBlockEllipseRing(150, 150, 60, 60, 30, 60, Color::Green);
 
     auto document = canvas(&c) | border;
     auto screen = Screen::Create(Dimension::Fit(document));
