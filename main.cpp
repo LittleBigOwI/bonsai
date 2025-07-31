@@ -31,12 +31,11 @@ int main() {
 
     int width = 400;
     int height = 400;
-    int cx = 25;
-    int cy = 25;
-    int radius = 30;
 
     auto c = BonsaiCanvas(width, height);
-    c.DrawAngledPointEllipse(200, 200, 30, 30, 160, Color::Red);
+    c.DrawAngledPointEllipseRing(150, 150, 60, 60, 30, 360, Color::Red);
+    c.DrawAngledPointEllipseRing(150, 150, 60, 60, 30, 180, Color::Blue);
+    c.DrawAngledPointEllipseRing(150, 150, 60, 60, 30, 60, Color::Green);
 
     auto document = canvas(&c) | border;
     auto screen = Screen::Create(Dimension::Fit(document));
