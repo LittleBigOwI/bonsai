@@ -4,7 +4,7 @@
 
 class BonsaiCanvas : public ftxui::Canvas {
 public:
-    using ftxui::Canvas::Canvas;
+    explicit BonsaiCanvas(ftxui::Canvas& canvas) : canvas_(canvas) {}
 
     void DrawAngledBlockCircle(int x, int y, int r, double angle);
     void DrawAngledBlockCircle(int x, int y, int r, double angle, const ftxui::Color& color);
@@ -13,6 +13,22 @@ public:
     void DrawAngledPointCircle(int x, int y, int r, double angle);
     void DrawAngledPointCircle(int x, int y, int r, double angle, const ftxui::Color& color);
     void DrawAngledPointCircle(int x, int y, int r, double angle, const Stylizer& s);
+
+    void DrawAngledBlockCircleFilled(int x, int y, int r, double angle);
+    void DrawAngledBlockCircleFilled(int x, int y, int r, double angle, const ftxui::Color& color);
+    void DrawAngledBlockCircleFilled(int x, int y, int r, double angle, const Stylizer& s);
+
+    void DrawAngledPointCircleFilled(int x, int y, int r, double angle);
+    void DrawAngledPointCircleFilled(int x, int y, int r, double angle, const ftxui::Color& color);
+    void DrawAngledPointCircleFilled(int x, int y, int r, double angle, const Stylizer& s);
+
+    void DrawAngledPointCircleRing(int x, int y, int r1, int r2, double angle);
+    void DrawAngledPointCircleRing(int x, int y, int r1, int r2, double angle, const ftxui::Color& color);
+    void DrawAngledPointCircleRing(int x, int y, int r1, int r2, double angle, const Stylizer& s);
+
+    void DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle);
+    void DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle, const ftxui::Color& color);
+    void DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle, const Stylizer& s);
 
     void DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle);
     void DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle, const ftxui::Color& color);
@@ -37,4 +53,7 @@ public:
     void DrawAngledPointEllipseRing(int x, int y, int r1, int r2, int r3, double angle);
     void DrawAngledPointEllipseRing(int x, int y, int r1, int r2, int r3, double angle, const ftxui::Color& color);
     void DrawAngledPointEllipseRing(int x, int y, int r1, int r2, int r3, double angle, const Stylizer& s);
+    
+private:
+    ftxui::Canvas& canvas_;
 };

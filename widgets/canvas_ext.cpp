@@ -34,6 +34,66 @@ void BonsaiCanvas::DrawAngledPointCircle(int x, int y, int r, double angle, cons
     this->DrawAngledPointEllipse(x, y, r, r, angle, s);
 }
 
+void BonsaiCanvas::DrawAngledBlockCircleFilled(int x, int y, int r, double angle)
+{
+    this->DrawAngledBlockEllipseRing(x, y, r, r, 0, angle);
+}
+
+void BonsaiCanvas::DrawAngledBlockCircleFilled(int x, int y, int r, double angle, const ftxui::Color& color)
+{
+    this->DrawAngledBlockEllipseRing(x, y, r, r, 0, angle, color);
+}
+
+void BonsaiCanvas::DrawAngledBlockCircleFilled(int x, int y, int r, double angle, const Stylizer& s)
+{
+    this->DrawAngledBlockEllipseRing(x, y, r, r, 0, angle, s);
+}
+
+void BonsaiCanvas::DrawAngledPointCircleFilled(int x, int y, int r, double angle)
+{
+    this->DrawAngledPointEllipseRing(x, y, r, r, 0, angle);
+}
+
+void BonsaiCanvas::DrawAngledPointCircleFilled(int x, int y, int r, double angle, const ftxui::Color& color)
+{
+    this->DrawAngledPointEllipseRing(x, y, r, r, 0, angle, color);
+}
+
+void BonsaiCanvas::DrawAngledPointCircleFilled(int x, int y, int r, double angle, const Stylizer& s)
+{
+    this->DrawAngledPointEllipseRing(x, y, r, r, 0, angle, s);
+}
+
+void BonsaiCanvas::DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle)
+{
+    this->DrawAngledBlockEllipseRing(x, y, r1, r1, r2, angle);
+}
+
+void BonsaiCanvas::DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle, const ftxui::Color& color)
+{
+    this->DrawAngledBlockEllipseRing(x, y, r1, r1, r2, angle, color);
+}
+
+void BonsaiCanvas::DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle, const Stylizer& s)
+{
+    this->DrawAngledBlockEllipseRing(x, y, r1, r1, r2, angle, s);
+}
+
+void BonsaiCanvas::DrawAngledPointCircleRing(int x, int y, int r1, int r2, double angle)
+{
+    this->DrawAngledPointEllipseRing(x, y, r1, r1, r2, angle);
+}
+
+void BonsaiCanvas::DrawAngledPointCircleRing(int x, int y, int r1, int r2, double angle, const ftxui::Color& color)
+{
+    this->DrawAngledPointEllipseRing(x, y, r1, r1, r2, angle, color);
+}
+
+void BonsaiCanvas::DrawAngledPointCircleRing(int x, int y, int r1, int r2, double angle, const Stylizer& s)
+{
+    this->DrawAngledPointEllipseRing(x, y, r1, r1, r2, angle, s);
+}
+
 void BonsaiCanvas::DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle)
 {
     this->DrawAngledBlockEllipse(x, y, r1, r2, angle, nostyle);
@@ -63,7 +123,7 @@ void BonsaiCanvas::DrawAngledBlockEllipse(int x1, int y1, int r1, int r2, double
         if (angle < 0)
             angle += 2 * M_PI;
         if (angle <= max_angle_rad)
-            this->DrawBlock(x1 + dx, 2 * (y1 + dy), true, s);
+            this->canvas_.DrawBlock(x1 + dx, 2 * (y1 + dy), true, s);
     };
 
     do
@@ -122,7 +182,7 @@ void BonsaiCanvas::DrawAngledPointEllipse(int x1, int y1, int r1, int r2, double
         if (angle < 0)
             angle += 2 * M_PI;
         if (angle <= max_angle_rad)
-            this->DrawPoint(x1 + dx, 2 * (y1 + dy), true, s);
+            this->canvas_.DrawPoint(x1 + dx, 2 * (y1 + dy), true, s);
     };
 
     do
@@ -163,58 +223,9 @@ void BonsaiCanvas::DrawAngledBlockEllipseFilled(int x1, int y1, int r1, int r2, 
                                        { p.foreground_color = color; });
 }
 
-void BonsaiCanvas::DrawAngledBlockEllipseFilled(int x1, int y1, int r1, int r2, double angle, const Stylizer &s)
+void BonsaiCanvas::DrawAngledBlockEllipseFilled(int x, int y, int r1, int r2, double angle, const Stylizer &s)
 {
-    int x = -r1;
-    int y = 0;
-    int e2 = r2;
-    int dx = (1 + 2 * x) * e2 * e2;
-    int dy = x * x;
-    int err = dx + dy;
-
-    double max_angle_rad = angle * M_PI / 180.0;
-
-    auto within_angle = [&](int dx, int dy)
-    {
-        double angle = atan2(dy * r1, dx * r2);
-        if (angle < 0)
-            angle += 2 * M_PI;
-        return angle <= max_angle_rad;
-    };
-
-    do
-    {
-        for (int xx = x1 + x; xx <= x1 - x; ++xx)
-        {
-            int dx = xx - x1;
-            if (within_angle(dx, y))
-                this->DrawBlock(xx, y1 + y, true, s);
-            if (within_angle(dx, -y))
-                this->DrawBlock(xx, y1 - y, true, s);
-        }
-
-        e2 = 2 * err;
-        if (e2 >= dx)
-        {
-            x++;
-            err += dx += 2 * r2 * r2;
-        }
-        if (e2 <= dy)
-        {
-            y++;
-            err += dy += 2 * r1 * r1;
-        }
-    } while (x <= 0);
-
-    while (y++ < r2)
-    {
-        int dy_pos = y;
-        int dy_neg = -y;
-        if (within_angle(0, dy_pos))
-            this->DrawBlock(x1, y1 + dy_pos, true, s);
-        if (within_angle(0, dy_neg))
-            this->DrawBlock(x1, y1 + dy_neg, true, s);
-    }
+    this->DrawAngledBlockEllipseRing(x, y, r1, r2, 0, angle, s);
 }
 
 void BonsaiCanvas::DrawAngledPointEllipseFilled(int x, int y, int r1, int r2, double angle)
@@ -228,59 +239,9 @@ void BonsaiCanvas::DrawAngledPointEllipseFilled(int x, int y, int r1, int r2, do
                                        { p.foreground_color = color; });
 }
 
-void BonsaiCanvas::DrawAngledPointEllipseFilled(int x1, int y1, int r1, int r2, double angle, const Stylizer &s)
+void BonsaiCanvas::DrawAngledPointEllipseFilled(int x, int y, int r1, int r2, double angle, const Stylizer &s)
 {
-
-    int x = -r1;
-    int y = 0;
-    int e2 = r2;
-    int dx = (1 + 2 * x) * e2 * e2;
-    int dy = x * x;
-    int err = dx + dy;
-
-    double max_angle_rad = angle * M_PI / 180.0;
-
-    auto within_angle = [&](int dx, int dy)
-    {
-        double angle = atan2(dy * r1, dx * r2);
-        if (angle < 0)
-            angle += 2 * M_PI;
-        return angle <= max_angle_rad;
-    };
-
-    do
-    {
-        for (int xx = x1 + x; xx <= x1 - x; ++xx)
-        {
-            int dx = xx - x1;
-            if (within_angle(dx, y))
-                DrawPoint(xx, y1 + y, true, s);
-            if (within_angle(dx, -y))
-                DrawPoint(xx, y1 - y, true, s);
-        }
-
-        e2 = 2 * err;
-        if (e2 >= dx)
-        {
-            x++;
-            err += dx += 2 * r2 * r2;
-        }
-        if (e2 <= dy)
-        {
-            y++;
-            err += dy += 2 * r1 * r1;
-        }
-    } while (x <= 0);
-
-    while (y++ < r2)
-    {
-        int dy_pos = y;
-        int dy_neg = -y;
-        if (within_angle(0, dy_pos))
-            DrawPoint(x1, y1 + dy_pos, true, s);
-        if (within_angle(0, dy_neg))
-            DrawPoint(x1, y1 + dy_neg, true, s);
-    }
+    this->DrawAngledPointEllipseRing(x, y, r1, r2, 0, angle, s);
 }
 
 void BonsaiCanvas::DrawAngledBlockEllipseRing(int x, int y, int r1, int r2, int r3, double angle)
@@ -328,9 +289,9 @@ void BonsaiCanvas::DrawAngledBlockEllipseRing(int x1, int y1, int r1, int r2, in
         {
             int dx = xx - x1;
             if (within_angular_ring(dx, y))
-                DrawBlock(xx, y1 + y, true, s);
+                this->canvas_.DrawBlock(xx, y1 + y, true, s);
             if (within_angular_ring(dx, -y))
-                DrawBlock(xx, y1 - y, true, s);
+                this->canvas_.DrawBlock(xx, y1 - y, true, s);
         }
 
         e2 = 2 * err;
@@ -349,9 +310,9 @@ void BonsaiCanvas::DrawAngledBlockEllipseRing(int x1, int y1, int r1, int r2, in
     while (y++ < r2)
     {
         if (within_angular_ring(0, y))
-            DrawBlock(x1, y1 + y, true, s);
+            this->canvas_.DrawBlock(x1, y1 + y, true, s);
         if (within_angular_ring(0, -y))
-            DrawBlock(x1, y1 - y, true, s);
+            this->canvas_.DrawBlock(x1, y1 - y, true, s);
     }
 }
 
@@ -401,9 +362,9 @@ void BonsaiCanvas::DrawAngledPointEllipseRing(int x1, int y1, int r1, int r2, in
         {
             int dx = xx - x1;
             if (within_angular_ring(dx, y))
-                DrawPoint(xx, y1 + y, true, s);
+                this->canvas_.DrawPoint(xx, y1 + y, true, s);
             if (within_angular_ring(dx, -y))
-                DrawPoint(xx, y1 - y, true, s);
+                this->canvas_.DrawPoint(xx, y1 - y, true, s);
         }
 
         e2 = 2 * err;
@@ -422,8 +383,8 @@ void BonsaiCanvas::DrawAngledPointEllipseRing(int x1, int y1, int r1, int r2, in
     while (y++ < r2)
     {
         if (within_angular_ring(0, y))
-            DrawPoint(x1, y1 + y, true, s);
+            this->canvas_.DrawPoint(x1, y1 + y, true, s);
         if (within_angular_ring(0, -y))
-            DrawPoint(x1, y1 - y, true, s);
+            this->canvas_.DrawPoint(x1, y1 - y, true, s);
     }
 }

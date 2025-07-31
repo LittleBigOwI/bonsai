@@ -11,36 +11,31 @@
 int main() {
     using namespace ftxui;
 
-    // auto screen = ScreenInteractive::Fullscreen();
+    auto screen = ScreenInteractive::Fullscreen();
 
-    // auto right_pane_renderer = Renderer([] {
-    //     return vbox({
-    //         text("Main Content Area") | center,
-    //         filler(),
-    //     }) | border | flex;
-    // });
+    auto right_pane = Renderer([] {
+        return canvas([](Canvas& c) {
+            int width = c.width();
+            int height = c.height();
 
-    // auto sidebar = ui::RenderSidebar(SIDEBAR_PATH, SIDEBAR_WIDTH);
+            int cx = width / 2;
+            int cy = height / 2;
 
-    // auto app = Container::Horizontal({
-    //     sidebar,
-    //     right_pane_renderer,
-    // });
+            int radius = std::min(width, height) / 3;
 
-    // screen.Loop(app);
+            BonsaiCanvas bonsai(c);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 360, Color::Red);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 180, Color::Blue);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 60, Color::Green);
+        }) | flex | border;
+    });
 
-    int width = 400;
-    int height = 400;
+    auto sidebar = ui::RenderSidebar(SIDEBAR_PATH, SIDEBAR_WIDTH);
 
-    auto c = BonsaiCanvas(width, height);
-    c.DrawAngledBlockEllipseRing(150, 150, 60, 60, 30, 360, Color::Red);
-    c.DrawAngledBlockEllipseRing(150, 150, 60, 60, 30, 180, Color::Blue);
-    c.DrawAngledBlockEllipseRing(150, 150, 60, 60, 30, 60, Color::Green);
+    auto app = Container::Horizontal({
+        sidebar,
+        right_pane,
+    });
 
-    auto document = canvas(&c) | border;
-    auto screen = Screen::Create(Dimension::Fit(document));
-    Render(screen, document);
-    screen.Print();
-
-    return 0;
+    screen.Loop(app);
 }
