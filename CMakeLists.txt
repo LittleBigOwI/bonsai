@@ -9,7 +9,13 @@ find_package(ftxui REQUIRED)
 add_executable(bonsai
     src/main.cpp
     
+    src/core/scanner.cpp
+    
     src/interface/sidebar.cpp
+    src/interface/piechart.cpp
+    
+    src/utils/colors.cpp
+    
     src/widgets/canvas_ext.cpp
 )
 
