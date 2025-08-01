@@ -16,6 +16,7 @@ int main() {
     auto screen = ScreenInteractive::Fullscreen();
 
     auto right_pane = Renderer([] {
+        // App preview
         return canvas([](Canvas& c) {
             int width = c.width();
             int height = c.height();
@@ -23,27 +24,35 @@ int main() {
             int cx = width / 2;
             int cy = height / 2;
 
-            int radius = std::min(width, height) / 3;
+            int radius = std::min(width, height) / 6;
 
             BonsaiCanvas bonsai(c);
-            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 360, Color::Red);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius*2, (radius*1.50), 360, Color::Red3);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius*2, (radius*1.50), 180, Color::Blue3);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius*2, (radius*1.50), 60, Color::Green3);
+
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius*1.50, radius, 360, Color::Red);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius*1.50, radius, 180, Color::Blue1);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius*1.50, radius, 60, Color::Green);
+
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 360, Color::Red1);
             bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 180, Color::Blue);
-            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 60, Color::Green);
+            bonsai.DrawAngledBlockCircleRing(cx, cy, radius, radius/2, 60, Color::Green1);
 
-            int label_radius = radius - (radius / 4); // same distance from center as red label
+            int label_radius = radius - (radius / 4);
 
-            // ----- Label 1: /home 50% (Red, already provided) -----
+            c.DrawText(cx - 5, cy - 2, "140.29");
+            c.DrawText(cx - 2, cy + 2, "GiB");
             c.DrawText(
-                cx - 9, // centered manually for "/home 50%" (length = 9)
+                cx - 9,
                 cy - radius + (radius / 4),
                 "/home 50%",
                 [](ftxui::Pixel &p) {
-                    p.background_color = ftxui::Color::Red;
+                    p.background_color = ftxui::Color::Red1;
                     p.foreground_color = ftxui::Color::White;
                 }
             );
 
-            // ----- Label 2: /usr 30% (Blue) -----
             {
                 std::string text = "/usr 30%";
                 int text_len = static_cast<int>(text.size());
@@ -60,7 +69,6 @@ int main() {
                 });
             }
 
-            // ----- Label 3: /bin 20% (Green) -----
             {
                 std::string text = "/bin 20%";
                 int text_len = static_cast<int>(text.size()) + 2;
@@ -72,7 +80,7 @@ int main() {
                 int y = static_cast<int>(cy + std::sin(angle_rad) * label_radius);
 
                 c.DrawText(x, y, text, [](ftxui::Pixel &p) {
-                    p.background_color = ftxui::Color::Green;
+                    p.background_color = ftxui::Color::Green1;
                     p.foreground_color = ftxui::Color::Black;
                 });
             }
