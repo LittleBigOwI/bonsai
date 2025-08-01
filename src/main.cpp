@@ -1,5 +1,5 @@
 #include "widgets/canvas_ext.hpp"
-#include "ui/sidebar.hpp"
+#include "interface/sidebar.hpp"
 
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/component/component.hpp>

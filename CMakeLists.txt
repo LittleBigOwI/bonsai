@@ -7,10 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ftxui REQUIRED)
 
 add_executable(bonsai
-    main.cpp
+    src/main.cpp
     
-    ui/sidebar.cpp
-    widgets/canvas_ext.cpp
+    src/interface/sidebar.cpp
+    src/widgets/canvas_ext.cpp
 )
 
 target_link_libraries(bonsai
