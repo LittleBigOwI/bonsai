@@ -26,7 +26,7 @@ int main() {
     ui::PieRing ring = {
         {
             {
-                "home 50%", 50.0, {
+                "home 50%", 40.0, {
                     {
                         "pictures 30%", 30.0, {
                             {"phone 30%", 30.0}
@@ -48,6 +48,9 @@ int main() {
                         }
                     },
                 }
+            },
+            {
+                "var 10%", 10.0
             }
         }
     };
