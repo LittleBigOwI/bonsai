@@ -1,13 +1,16 @@
 #include "sidebar.hpp"
+#include "../utils/dataformat.hpp"
+#include "../core/scanner.hpp"
 
-#include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/dom/elements.hpp>
 
 #include <filesystem>
 #include <functional>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #define SIDEBAR_FOLDER_ICON ""
 #define SIDEBAR_SELECTED_FOLDER_ICON ""
@@ -20,9 +23,68 @@ namespace ui {
 
     class SidebarComponent : public ComponentBase {
     public:
-        SidebarComponent(const std::string& path, int width)
-            : path_(fs::absolute(path).string()), width_(width) {
+        SidebarComponent(const std::string& path, int width, ScanSnapshot* snapshot): path_(fs::absolute(path).string()), width_(width), snapshot_(snapshot) {
+            OnEvent(Event::Custom);
             LoadEntries();
+        }
+
+        bool OnEvent(Event event) override {
+            if (event == Event::Custom) {
+                entries_.clear();
+                is_directory_.clear();
+
+                using Entry = std::pair<std::string, bool>;
+                std::vector<Entry> temp_entries;
+
+                try {
+                    for (const auto& entry : fs::directory_iterator(path_)) {
+                        std::string name = entry.path().filename().string();
+                        bool is_dir = entry.is_directory();
+                        temp_entries.emplace_back(name, is_dir);
+                    }
+                } catch (const std::exception& e) {
+                    temp_entries.emplace_back("Error reading directory", false);
+                    selected_ = 0;
+                }
+
+                std::sort(temp_entries.begin(), temp_entries.end(), [](const Entry& a, const Entry& b) {
+                    if (a.second != b.second)
+                        return a.second > b.second;
+                    return a.first < b.first;
+                });
+
+                if (fs::path(path_) != fs::path(path_).root_path()) {
+                    entries_.push_back("..");
+                    is_directory_.push_back(true);
+                }
+
+                std::sort(temp_entries.begin(), temp_entries.end(),
+                    [this](const Entry& a, const Entry& b) {
+                        fs::path path_a = fs::path(path_) / a.first;
+                        fs::path path_b = fs::path(path_) / b.first;
+
+                        uintmax_t size_a = Scanner::getStats(path_a.string(), *snapshot_).size;
+                        uintmax_t size_b = Scanner::getStats(path_b.string(), *snapshot_).size;
+
+                        if (size_a != size_b)
+                            return size_a > size_b;
+
+                        if (a.second != b.second)
+                            return a.second > b.second;
+
+                        return a.first < b.first;
+                    });
+
+                for (const auto& [name, is_dir] : temp_entries) {
+                    entries_.push_back(name);
+                    is_directory_.push_back(is_dir);
+                }
+                
+                LoadEntries();
+                return true;
+            }
+
+            return ComponentBase::OnEvent(event);
         }
 
         Element OnRender() override {
@@ -42,41 +104,9 @@ namespace ui {
         int selected_ = 0;
 
         Component menu_;
+        ScanSnapshot* snapshot_;
 
         void LoadEntries() {
-            entries_.clear();
-            is_directory_.clear();
-
-            using Entry = std::pair<std::string, bool>;
-            std::vector<Entry> temp_entries;
-
-            try {
-                for (const auto& entry : fs::directory_iterator(path_)) {
-                    std::string name = entry.path().filename().string();
-                    bool is_dir = entry.is_directory();
-                    temp_entries.emplace_back(name, is_dir);
-                }
-            } catch (const std::exception& e) {
-                temp_entries.emplace_back("Error reading directory", false);
-                selected_ = 0;
-            }
-
-            std::sort(temp_entries.begin(), temp_entries.end(), [](const Entry& a, const Entry& b) {
-                if (a.second != b.second)
-                    return a.second > b.second;
-                return a.first < b.first;
-            });
-
-            if (fs::path(path_) != fs::path(path_).root_path()) {
-                entries_.push_back("..");
-                is_directory_.push_back(true);
-            }
-
-            for (const auto& [name, is_dir] : temp_entries) {
-                entries_.push_back(name);
-                is_directory_.push_back(is_dir);
-            }
-
             MenuOption option;
             option.entries = &entries_;
             option.selected = &selected_;
@@ -109,7 +139,7 @@ namespace ui {
                     text(" "),
                     label_text | size(WIDTH, LESS_THAN, width_ - 10),
                     filler(),
-                    label == ".." ? text("") : text("?%") | color(Color::GrayDark)
+                    label == ".." ? text("") : text(DataFormat::toReadable(Scanner::getStats((fs::path(path_) / entries_[entry.index]).string(), *this->snapshot_).size)) | color(Color::GrayDark)
                 });
 
                 if (is_selected) {
@@ -136,6 +166,7 @@ namespace ui {
                     }
 
                     path_ = fs::absolute(new_path).string();
+                    OnEvent(Event::Custom);
                     LoadEntries();
                 }
             };
@@ -145,7 +176,7 @@ namespace ui {
         }
     };
 
-    Component RenderSidebar(const std::string& path, int width) {
-        return Make<SidebarComponent>(path, width);
+    Component RenderSidebar(const std::string& path, int width, ScanSnapshot* snapshot) {
+        return Make<SidebarComponent>(path, width, snapshot);
     }
 }

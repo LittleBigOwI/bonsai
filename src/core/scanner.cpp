@@ -1,7 +1,9 @@
 #include "scanner.hpp"
-#include <sys/statfs.h>
 
-Scanner::Scanner(fs::path root) : root_(std::move(root)) {}
+#include <ftxui/component/screen_interactive.hpp>
+#include <ftxui/component/event.hpp>
+
+#include <sys/statfs.h>
 
 bool Scanner::isVirtualFs(const fs::path& path) {
     struct statfs sfs;
@@ -20,6 +22,10 @@ void Scanner::enqueue(const fs::path& path) {
     task_queue_.push({ path });
     active_tasks_++;
     cv_.notify_one();
+}
+
+void Scanner::setCallback(std::function<void()> callback) {
+    update_callback_ = std::move(callback);
 }
 
 void Scanner::worker() {
@@ -43,6 +49,8 @@ void Scanner::worker() {
 
         fs::path dir = task.path;
         uintmax_t local_size = 0;
+        uintmax_t local_files = 0;
+        uintmax_t local_folders = 0;
         std::vector<std::string> children;
 
         for (auto& entry : fs::directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
@@ -52,16 +60,28 @@ void Scanner::worker() {
                 if (fs::is_regular_file(entry)) {
                     uintmax_t file_size = fs::file_size(entry);
                     local_size += file_size;
-                    total_size_ += file_size;
-                    file_count_++;
+                    local_files++;
+                    snapshot_->total_size += file_size;
+                    snapshot_->total_files++;
                 } else if (fs::is_directory(entry) && !isVirtualFs(entry)) {
                     std::string child_str = entry.path().string();
                     children.push_back(child_str);
+                    local_folders++;
+                    snapshot_->total_dirs++;
                     enqueue(entry.path());
                 }
             } catch (...) {
                 continue;
             }
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(snapshot_->map_mutex);
+            snapshot_->path_stats[dir.string()] = {
+                .size = local_size,
+                .files = local_files,
+                .folders = local_folders
+            };
         }
 
         {
@@ -76,12 +96,15 @@ void Scanner::worker() {
 }
 
 void Scanner::propagate(const std::string& root_path) {
+    this->update_callback_();
     std::unordered_set<std::string> visited;
+
     std::function<uintmax_t(const std::string&)> dfs = [&](const std::string& path) -> uintmax_t {
         if (visited.count(path)) return 0;
         visited.insert(path);
 
         uintmax_t total = 0;
+
         {
             std::lock_guard<std::mutex> lock(result_mutex_);
             total = dir_sizes_[path];
@@ -96,11 +119,18 @@ void Scanner::propagate(const std::string& root_path) {
             dir_sizes_[path] = total;
         }
 
+        {
+            std::lock_guard<std::mutex> lock(snapshot_->map_mutex);
+            auto& stats = snapshot_->path_stats[path];
+            stats.size = total;
+        }
+
         return total;
     };
 
     dfs(root_path);
 }
+
 
 void Scanner::scan() {
     enqueue(root_);
@@ -125,4 +155,13 @@ uintmax_t Scanner::getTotalSize() const {
 
 uintmax_t Scanner::getFileCount() const {
     return file_count_;
+}
+
+DirStats Scanner::getStats(const std::string& path, ScanSnapshot& snapshot) {
+    std::lock_guard<std::mutex> lock(snapshot.map_mutex);
+    auto it = snapshot.path_stats.find(path);
+    if (it != snapshot.path_stats.end()) {
+        return it->second;
+    }
+    return {};
 }

@@ -15,6 +15,7 @@ add_executable(bonsai
     src/interface/piechart.cpp
     
     src/utils/colors.cpp
+    src/utils/dataformat.cpp
     
     src/widgets/canvas_ext.cpp
 )
