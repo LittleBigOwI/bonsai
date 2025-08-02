@@ -10,12 +10,13 @@ namespace ui {
 struct RingSlice {
     std::string label;
     double percent = 0.0;
+    std::vector<RingSlice> children;
 };
 
 struct PieRing {
     std::vector<RingSlice> slices;
 };
 
-ftxui::Component RenderPieChart(const std::vector<PieRing>& slices, const std::string& center_label);
+ftxui::Component RenderPieChart(const PieRing& ring, const std::string& center_label);
 
 }

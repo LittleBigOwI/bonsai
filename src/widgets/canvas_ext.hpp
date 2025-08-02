@@ -30,6 +30,14 @@ public:
     void DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle, const ftxui::Color& color);
     void DrawAngledBlockCircleRing(int x, int y, int r1, int r2, double angle, const Stylizer& s);
 
+    void DrawAngledBlockCircleRingOffset(int x, int y, int r1, int r2, double starting_angle, double angle);
+    void DrawAngledBlockCircleRingOffset(int x, int y, int r1, int r2, double starting_angle, double angle, const ftxui::Color& color);
+    void DrawAngledBlockCircleRingOffset(int x, int y, int r1, int r2, double starting_angle, double angle, const Stylizer &s);
+
+    void DrawAngledPointCircleRingOffset(int x, int y, int r1, int r2, double starting_angle, double angle);
+    void DrawAngledPointCircleRingOffset(int x, int y, int r1, int r2, double starting_angle, double angle, const ftxui::Color& color);
+    void DrawAngledPointCircleRingOffset(int x, int y, int r1, int r2, double starting_angle, double angle, const Stylizer &s);
+
     void DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle);
     void DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle, const ftxui::Color& color);
     void DrawAngledBlockEllipse(int x, int y, int r1, int r2, double angle, const Stylizer& s);
@@ -53,6 +61,14 @@ public:
     void DrawAngledPointEllipseRing(int x, int y, int r1, int r2, int r3, double angle);
     void DrawAngledPointEllipseRing(int x, int y, int r1, int r2, int r3, double angle, const ftxui::Color& color);
     void DrawAngledPointEllipseRing(int x, int y, int r1, int r2, int r3, double angle, const Stylizer& s);
+
+    void DrawAngledBlockEllipseRingOffset(int x, int y, int r1, int r2, int r3, double starting_angle, double angle);
+    void DrawAngledBlockEllipseRingOffset(int x, int y, int r1, int r2, int r3, double starting_angle, double angle, const ftxui::Color& color);
+    void DrawAngledBlockEllipseRingOffset(int x, int y, int r1, int r2, int r3, double starting_angle, double angle, const Stylizer &s);
+
+    void DrawAngledPointEllipseRingOffset(int x, int y, int r1, int r2, int r3, double starting_angle, double angle);
+    void DrawAngledPointEllipseRingOffset(int x, int y, int r1, int r2, int r3, double starting_angle, double angle, const ftxui::Color& color);
+    void DrawAngledPointEllipseRingOffset(int x, int y, int r1, int r2, int r3, double starting_angle, double angle, const Stylizer &s);
     
 private:
     ftxui::Canvas& canvas_;
