@@ -11,7 +11,22 @@
 #include <iostream>
 
 #define SIDEBAR_WIDTH 50
-#define SIDEBAR_PATH "/home/littlebigowl/Documents/Code/Cpp/bonsai/src"
+#define SIDEBAR_PATH "/"
+
+void PrintTree(const std::shared_ptr<TreeNode>& node, int depth = 0) {
+    if (!node || depth >= 3) return;
+    
+    std::string indent(depth * 2, ' ');
+    std::cout << indent << (node->is_dir ? 
+        "[DIR] " : "[FILE] ") << node->name << 
+        " | size: " << node->size << 
+        " | files: " << node->files << 
+        " | folders: " << node->folders << "\n";
+        
+    for (auto& child : node->children) {
+        PrintTree(child, depth + 1);
+    }
+}
 
 int main() {
     using namespace ftxui;
@@ -19,9 +34,6 @@ int main() {
 
     ScreenInteractive screen = ScreenInteractive::Fullscreen();
     ScanSnapshot snapshot;
-
-    // auto sidebar = ui::RenderSidebar(SIDEBAR_PATH, SIDEBAR_WIDTH, snapshot);
-
 
     // ui::PieRing ring;
     // ring.slices = {
@@ -39,20 +51,35 @@ int main() {
     // // auto piechart = ui::BuildPieRingFromSnapshot(snapshot, "/");
     // auto ui = Container::Horizontal({ sidebar });
 
-    std::thread scan_thread([&] {
+    // std::thread scan_thread([&] {
         Scanner scanner(SIDEBAR_PATH, &snapshot);
-        scanner.setCallback([&]() {
-            std::lock_guard<std::mutex> lock(snapshot.tree_mutex);
-            // screen.PostEvent(Event::Custom);
-        });
+        // scanner.setCallback([&]() {
+        //     std::lock_guard<std::mutex> lock(snapshot.tree_mutex);
+        //     screen.PostEvent(Event::Custom);
+        // });
 
         scanner.scan();
 
-        // screen.PostEvent(Event::Custom);
+    //     screen.PostEvent(Event::Escape);
+    // });
+
+    // PrintTree(snapshot.root);
+
+    auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, SIDEBAR_PATH);
+    auto sidebox = Container::Vertical({
+        sidebar
     });
 
+    auto sidebox_renderer = Renderer(sidebox, [&]{
+        return vbox({
+            text("Explorer") | bold | center,
+            separator(),
+            sidebar->Render() | vscroll_indicator | frame
+        }) | border | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
+    });
 
-    // screen.Loop(ui);
-    scan_thread.join();
+    screen.Loop(sidebox_renderer);
+    // scan_thread.join();
+
     return 0;
 }

@@ -18,44 +18,45 @@ namespace fs = std::filesystem;
 
 struct TreeNode {
     std::string name;
-    uintmax_t size = 0;
-    uintmax_t files = 0;
-    uintmax_t folders = 0;
+    std::atomic<uintmax_t> size{0};
+    std::atomic<uintmax_t> files{0};
+    std::atomic<uintmax_t> folders{0};
     bool is_dir = false;
 
     std::vector<std::shared_ptr<TreeNode>> children;
     std::weak_ptr<TreeNode> parent;
 
-    std::string fullPath() const {
-        if (auto p = parent.lock()) {
-            if (p->parent.expired())
-                return "/" + name;
-            return p->fullPath() + "/" + name;
-        }
-        return name;
-    }
+    std::mutex node_mutex;
+    fs::path cached_full_path;
 };
-
 
 struct ScanSnapshot {
     std::atomic<uintmax_t> total_size{0};
     std::atomic<uintmax_t> total_files{0};
     std::atomic<uintmax_t> total_dirs{0};
 
-    std::mutex tree_mutex;
     std::shared_ptr<TreeNode> root;
+
+    std::unordered_map<std::string, std::shared_ptr<TreeNode>> node_map;
+    std::mutex node_map_mutex;
 };
 
 class Scanner {
 public:
-    explicit Scanner(fs::path root, ScanSnapshot* snapshot) : root_(std::move(root)), snapshot_(snapshot) {
+    explicit Scanner(fs::path root, ScanSnapshot* snapshot): root_(std::move(root)), snapshot_(snapshot) {
         snapshot_->root = std::make_shared<TreeNode>();
         snapshot_->root->name = "/";
         snapshot_->root->is_dir = true;
+        snapshot_->root->cached_full_path = "/";
+
+        {
+            std::lock_guard<std::mutex> lock(snapshot_->node_map_mutex);
+            snapshot_->node_map["/"] = snapshot_->root;
+        }
     }
 
     void scan();
-    void setCallback(std::function<void()> callback);
+    void setCallback(std::function<void()> callback) { update_callback_ = std::move(callback); }
 
     static std::shared_ptr<TreeNode> getNode(const std::string& path, ScanSnapshot& snapshot);
 
@@ -77,4 +78,5 @@ private:
     void enqueue(const fs::path& path, std::shared_ptr<TreeNode> parent_node);
     void worker();
     bool isVirtualFs(const fs::path& path);
+    fs::path getFullPath(const std::shared_ptr<TreeNode>& node);
 };
