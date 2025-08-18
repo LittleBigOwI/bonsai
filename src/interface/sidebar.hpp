@@ -9,5 +9,5 @@
 #include <string>
 
 namespace ui {
-    ftxui::Component RenderSidebar(const std::string& path, int width, ScanSnapshot* snapshot);
+    ftxui::Component RenderSidebar(const std::string& path, const int width, ScanSnapshot& snapshot);
 }
