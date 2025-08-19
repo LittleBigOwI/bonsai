@@ -10,10 +10,7 @@ add_executable(bonsai
     src/main.cpp
     
     src/core/scanner.cpp
-    
-    # src/interface/sidebar.cpp
-    # src/interface/piechart.cpp
-    
+        
     src/utils/colors.cpp
     src/utils/dataformat.cpp
     

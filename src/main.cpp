@@ -11,10 +11,10 @@
 #include <iostream>
 
 #define SIDEBAR_WIDTH 50
-#define DEFAULT_PATH "/home/littlebigowl/Pictures"
+#define DEFAULT_PATH "/home/littlebigowl/Documents"
 
 void PrintTree(const std::shared_ptr<TreeNode>& node, int depth = 0) {
-    if (!node || depth >= 3) return;
+    if (!node || depth >= 5) return;
     
     std::string indent(depth * 2, ' ');
     std::cout << indent << (node->is_dir ? 
@@ -92,7 +92,7 @@ int main() {
         }) | border;
     });
 
-    // screen.Loop(ui_renderer);
+    screen.Loop(ui_renderer);
     // scan_thread.join();
     return 0;
 }
