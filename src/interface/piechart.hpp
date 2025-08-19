@@ -6,10 +6,8 @@
 #include "../core/scanner.hpp"
 
 #include <ftxui/component/component.hpp>
-#include <ftxui/dom/elements.hpp>
 
 #include <algorithm>
-#include <iostream>
 #include <cmath>
 
 #define CHART_MAX_SIZE_THRESHOLD_PERCENTAGE 2

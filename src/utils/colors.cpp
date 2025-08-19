@@ -1,5 +1,5 @@
 #include "colors.hpp"
-#include <cmath>
+
 #include <algorithm>
 
 namespace utils {

@@ -1,5 +1,7 @@
 #pragma once
+
 #include <ftxui/screen/color.hpp>
+
 #include <vector>
 
 namespace utils {

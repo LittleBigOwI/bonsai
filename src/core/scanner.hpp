@@ -1,16 +1,12 @@
 #pragma once
 
-#include <filesystem>
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <mutex>
 #include <condition_variable>
+#include <unordered_map>
+#include <filesystem>
+#include <functional>
 #include <atomic>
 #include <thread>
 #include <queue>
-#include <functional>
-#include <memory>
 
 namespace fs = std::filesystem;
 
@@ -59,6 +55,7 @@ public:
     void setCallback(std::function<void()> callback) { update_callback_ = std::move(callback); }
 
     static std::shared_ptr<TreeNode> getNode(const std::string& path, ScanSnapshot& snapshot);
+    static void printSnapshot(const std::shared_ptr<TreeNode>& node, int depth = 0);
 
 private:
     struct DirTask {

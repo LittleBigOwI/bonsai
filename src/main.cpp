@@ -1,32 +1,11 @@
-#include "widgets/canvas_ext.hpp"
 #include "interface/piechart.hpp"
 #include "interface/sidebar.hpp"
-#include "utils/dataformat.hpp"
 #include "core/scanner.hpp"
 
 #include <ftxui/component/screen_interactive.hpp>
-#include <ftxui/component/component.hpp>
-#include <ftxui/dom/elements.hpp>
 
-#include <iostream>
-
-#define SIDEBAR_WIDTH 50
 #define DEFAULT_PATH "/home/littlebigowl/Documents"
-
-void PrintTree(const std::shared_ptr<TreeNode>& node, int depth = 0) {
-    if (!node || depth >= 5) return;
-    
-    std::string indent(depth * 2, ' ');
-    std::cout << indent << (node->is_dir ? 
-        "[DIR] " : "[FILE] ") << node->name << 
-        " | size: " << node->size << 
-        " | files: " << node->files << 
-        " | folders: " << node->folders << "\n";
-        
-    for (auto& child : node->children) {
-        PrintTree(child, depth + 1);
-    }
-}
+#define SIDEBAR_WIDTH 50
 
 int main() {
     using namespace ftxui;
@@ -34,21 +13,6 @@ int main() {
 
     ScreenInteractive screen = ScreenInteractive::Fullscreen();
     ScanSnapshot snapshot;
-
-    // ui::PieRing ring;
-    // ring.slices = {
-    //     ui::RingSlice{ "A", 40.0, {} },
-    //     ui::RingSlice{ "B", 30.0, {} },
-    //     ui::RingSlice{ "C", 20.0, {} },
-    //     ui::RingSlice{ "D", 10.0, {} },
-    // };
-
-    // ring.slices[0].children = {
-    //     ui::RingSlice{ "A1", 25.0, {} },
-    //     ui::RingSlice{ "A2", 15.0, {} },
-    // };
-
-    // auto ui = Container::Horizontal({ sidebar });
 
     // std::thread scan_thread([&] {
         Scanner scanner(DEFAULT_PATH, &snapshot);
@@ -61,8 +25,6 @@ int main() {
 
     //     screen.PostEvent(Event::Escape);
     // });
-
-    // PrintTree(snapshot.root);
 
     auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto chart = ui::piechart(snapshot, DEFAULT_PATH);

@@ -4,20 +4,11 @@
 #include "../core/scanner.hpp"
 
 #include <ftxui/component/component.hpp>
-#include <ftxui/component/event.hpp>
 
-#include <filesystem>
-#include <algorithm>
-#include <iostream>
-#include <memory>
-#include <vector>
-#include <string>
-#include <numeric>
-
-#define SIDEBAR_FOLDER_ICON ""
 #define SIDEBAR_SELECTED_FOLDER_ICON ""
-#define SIDEBAR_FILE_ICON ""
 #define SIDEBAR_SELECTED_FILE_ICON ""
+#define SIDEBAR_FOLDER_ICON ""
+#define SIDEBAR_FILE_ICON ""
 #define SIDEBAR_BACK_ICON ""
 
 namespace ui {

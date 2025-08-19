@@ -1,7 +1,9 @@
 #include "scanner.hpp"
+
+#include <unordered_map>
 #include <sys/statfs.h>
 #include <algorithm>
-#include <unordered_map>
+#include <iostream>
 
 bool Scanner::isVirtualFs(const fs::path& path) {
     struct statfs sfs;
@@ -214,4 +216,19 @@ std::shared_ptr<TreeNode> Scanner::getNode(const std::string& path, ScanSnapshot
     auto it = snapshot.node_map.find(path);
     if (it != snapshot.node_map.end()) return it->second;
     return nullptr;
+}
+
+void printSnapshot(const std::shared_ptr<TreeNode>& node, int depth = 0) {
+    if (!node || depth >= 5) return;
+    
+    std::string indent(depth * 2, ' ');
+    std::cout << indent << (node->is_dir ? 
+        "[DIR] " : "[FILE] ") << node->name << 
+        " | size: " << node->size << 
+        " | files: " << node->files << 
+        " | folders: " << node->folders << "\n";
+        
+    for (auto& child : node->children) {
+        printSnapshot(child, depth + 1);
+    }
 }
