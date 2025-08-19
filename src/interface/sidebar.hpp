@@ -22,7 +22,6 @@
 
 namespace ui {
     using namespace ftxui;
-    namespace fs = std::filesystem;
 
     class SidebarComponent : public ComponentBase {
     public:

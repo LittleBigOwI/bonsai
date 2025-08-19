@@ -11,7 +11,7 @@
 #include <iostream>
 
 #define SIDEBAR_WIDTH 50
-#define SIDEBAR_PATH "/"
+#define DEFAULT_PATH "/home/littlebigowl/Pictures"
 
 void PrintTree(const std::shared_ptr<TreeNode>& node, int depth = 0) {
     if (!node || depth >= 3) return;
@@ -48,11 +48,10 @@ int main() {
     //     ui::RingSlice{ "A2", 15.0, {} },
     // };
 
-    // // auto piechart = ui::BuildPieRingFromSnapshot(snapshot, "/");
     // auto ui = Container::Horizontal({ sidebar });
 
     // std::thread scan_thread([&] {
-        Scanner scanner(SIDEBAR_PATH, &snapshot);
+        Scanner scanner(DEFAULT_PATH, &snapshot);
         // scanner.setCallback([&]() {
         //     std::lock_guard<std::mutex> lock(snapshot.tree_mutex);
         //     screen.PostEvent(Event::Custom);
@@ -65,21 +64,35 @@ int main() {
 
     // PrintTree(snapshot.root);
 
-    auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, SIDEBAR_PATH);
-    auto sidebox = Container::Vertical({
-        sidebar
-    });
+    auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
+    auto chart = ui::piechart(snapshot, DEFAULT_PATH);
 
-    auto sidebox_renderer = Renderer(sidebox, [&]{
+    auto leftbox = Renderer(sidebar, [&] {
         return vbox({
             text("Explorer") | bold | center,
             separator(),
             sidebar->Render() | vscroll_indicator | frame
-        }) | border | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
+        }) | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
     });
 
-    screen.Loop(sidebox_renderer);
-    // scan_thread.join();
+    auto mainbox = Renderer([] {
+        return filler();
+    });
 
+    auto ui = Container::Horizontal({
+        leftbox,
+        mainbox,
+    });
+
+    auto ui_renderer = Renderer(ui, [&] {
+        return hbox({
+            leftbox->Render(),
+            separator(),
+            chart->Render(),
+        }) | border;
+    });
+
+    // screen.Loop(ui_renderer);
+    // scan_thread.join();
     return 0;
 }

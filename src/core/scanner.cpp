@@ -40,6 +40,7 @@ void Scanner::enqueue(const fs::path& path, std::shared_ptr<TreeNode> parent_nod
         node->is_dir = true;
         node->parent = parent_node;
         node->cached_full_path = (parent_node->cached_full_path == "/" ? "/" : parent_node->cached_full_path.string() + "/") + node->name;
+        node->cached_full_path = fs::absolute(node->cached_full_path).lexically_normal();
 
         {
             std::lock_guard<std::mutex> lock(parent_node->node_mutex);
@@ -171,6 +172,7 @@ void Scanner::scan() {
             node->is_dir = true;
             node->parent = parent;
             node->cached_full_path = parent->cached_full_path.string() + "/" + name;
+            node->cached_full_path = fs::absolute(node->cached_full_path).lexically_normal();
 
             {
                 std::lock_guard<std::mutex> lock(parent->node_mutex);
