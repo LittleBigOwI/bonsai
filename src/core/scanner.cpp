@@ -10,7 +10,6 @@ bool Scanner::isVirtualFs(const fs::path& path) {
     if (statfs(path.c_str(), &sfs) != 0) return false;
 
     switch (sfs.f_type) {
-        // Common virtual filesystems on Linux
         case 0x9fa0:       // devtmpfs
         case 0x62656572:   // debugfs
         case 0x53464846:   // shmfs / tmpfs
@@ -32,10 +31,9 @@ fs::path Scanner::getFullPath(const std::shared_ptr<TreeNode>& node) {
 }
 
 void Scanner::enqueue(const fs::path& path, std::shared_ptr<TreeNode> parent_node) {
-    // If path is "/" we use the parent_node itself
     std::shared_ptr<TreeNode> node;
     if (path == "/" && parent_node->cached_full_path == "/") {
-        node = parent_node; // Use root node directly
+        node = parent_node;
     } else {
         node = std::make_shared<TreeNode>();
         node->name = path.filename().string();
@@ -131,7 +129,6 @@ void Scanner::worker() {
         node->files.fetch_add(local_files, std::memory_order_relaxed);
         node->folders.fetch_add(local_folders, std::memory_order_relaxed);
 
-        // Propagate size up to parents atomically
         auto parent = node->parent.lock();
         while (parent) {
             parent->size.fetch_add(local_size, std::memory_order_relaxed);
@@ -202,13 +199,6 @@ void Scanner::scan() {
 
     for (auto& t : workers)
         t.join();
-
-    // if(this->root_ == "/") {
-    //     this->snapshot_->root = this->snapshot_->root->children[0];
-    //     this->snapshot_->root->cached_full_path = "/";
-    //     this->snapshot_->root->is_dir = true;
-    //     this->snapshot_->root->name = "/";
-    // }
 }
 
 std::shared_ptr<TreeNode> Scanner::getNode(const std::string& path, ScanSnapshot& snapshot) {
