@@ -29,7 +29,7 @@ int main() {
     auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto chart = ui::piechart(snapshot, DEFAULT_PATH);
 
-    auto leftbox = Renderer(sidebar, [&] {
+    auto sidebar_panel = Renderer(sidebar, [&] {
         return vbox({
             text("Explorer") | bold | center,
             separator(),
@@ -37,24 +37,19 @@ int main() {
         }) | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
     });
 
-    auto mainbox = Renderer([] {
-        return filler();
+    auto leftbox_layout = Container::Horizontal({
+        sidebar_panel,
     });
 
-    auto ui = Container::Horizontal({
-        leftbox,
-        mainbox,
-    });
-
-    auto ui_renderer = Renderer(ui, [&] {
+    auto ui = Renderer(leftbox_layout, [&] {
         return hbox({
-            leftbox->Render(),
+            leftbox_layout->Render(),
             separator(),
             chart->Render(),
         }) | border;
     });
 
-    screen.Loop(ui_renderer);
+    screen.Loop(ui);
     // scan_thread.join();
     return 0;
 }
