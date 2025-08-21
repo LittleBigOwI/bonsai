@@ -37,6 +37,7 @@ int main() {
         }) | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
     });
 
+    // This is so that the sidebar is focusable
     auto leftbox_layout = Container::Horizontal({
         sidebar_panel,
     });
