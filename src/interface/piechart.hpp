@@ -11,7 +11,7 @@
 #include <cmath>
 
 #define CHART_MAX_SIZE_THRESHOLD_PERCENTAGE 2
-#define CHART_MAX_GENERATIONS 3
+#define CHART_MAX_GENERATIONS 4
 
 namespace ui {
     using namespace ftxui;
@@ -72,7 +72,7 @@ namespace ui {
                 double percent = getPercentage(child->cached_full_path.string());
                 if (percent < CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) continue;
 
-                slices.push_back(buildSlices(child, 0, CHART_MAX_GENERATIONS));
+                slices.push_back(buildSlices(child, 0, CHART_MAX_GENERATIONS - 1));
             }
             std::sort(slices.begin(), slices.end(), [](const RingSlice& a, const RingSlice& b) { return a.percent > b.percent; });
         }
