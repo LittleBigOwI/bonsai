@@ -27,7 +27,11 @@ int main() {
     // });
 
     auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
-    auto chart = ui::piechart(snapshot, DEFAULT_PATH);
+    auto piechart = ui::piechart(snapshot, DEFAULT_PATH);
+
+    sidebar->setOnEnterCallback([&](const std::string& path) {
+        piechart->setPath(path);
+    });
 
     auto sidebar_panel = Renderer(sidebar, [&] {
         return vbox({
@@ -36,17 +40,17 @@ int main() {
             sidebar->Render() | vscroll_indicator | frame
         }) | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
     });
-
+    
     // This is so that the sidebar is focusable
     auto leftbox_layout = Container::Horizontal({
         sidebar_panel,
     });
-
+    
     auto ui = Renderer(leftbox_layout, [&] {
         return hbox({
             leftbox_layout->Render(),
             separator(),
-            chart->Render(),
+            piechart->Render(),
         }) | border;
     });
 

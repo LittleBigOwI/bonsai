@@ -20,12 +20,17 @@ namespace ui {
             build();
             setup();
         }
+        
+        void setOnEnterCallback(std::function<void(const std::string&)> cb) {
+            on_enter_callback_ = std::move(cb);
+        }
 
     private:
         int width_;
         int selected_ = 0;
         std::string path_;
 
+        std::function<void(const std::string&)> on_enter_callback_;
         std::vector<std::shared_ptr<TreeNode>> sorted_children_;
         std::vector<std::string> entries_;
         std::vector<bool> is_directory_;
@@ -115,14 +120,17 @@ namespace ui {
                 }
 
                 build();
-            };
+
+                if (on_enter_callback_)
+                    on_enter_callback_(path_);
+                };
 
             menu_ = Menu(&entries_, &selected_, option);
             Add(menu_);
         }
     };
 
-    inline Component sidebar(ScanSnapshot& snapshot, int width, const std::string path) {
-        return Make<SidebarComponent>(snapshot, width, path);
+    inline std::shared_ptr<SidebarComponent> sidebar(ScanSnapshot& snapshot, int width, const std::string path) {
+        return std::make_shared<SidebarComponent>(snapshot, width, path);
     }
 }

@@ -29,6 +29,11 @@ namespace ui {
             build();
             setup();
         }
+
+        void setPath(const std::string& path) {
+            this->path_ = path;
+            this->build();
+        }
     
     private:
         std::string path_;
@@ -40,7 +45,7 @@ namespace ui {
         double getPercentage(const std::string& path) {
             auto node = Scanner::getNode(path, snapshot_);
             if (!node) return 0.0;
-            return (static_cast<double>(node->size) * 100.0) / snapshot_.total_size;
+            return (static_cast<double>(node->size) * 100.0) / Scanner::getNode(this->path_, snapshot_)->size;
         }
 
         RingSlice buildSlices(const std::shared_ptr<TreeNode>& node, int depth, int max_depth) {
@@ -145,7 +150,7 @@ namespace ui {
         }
     };
 
-    inline Component piechart(ScanSnapshot& snapshot, const std::string path) {
-        return Make<PiechartComponent>(snapshot, path);
+    inline std::shared_ptr<PiechartComponent> piechart(ScanSnapshot& snapshot, const std::string& path) {
+        return std::make_shared<PiechartComponent>(snapshot, path);
     }
 }
