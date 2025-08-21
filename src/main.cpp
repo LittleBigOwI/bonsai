@@ -3,6 +3,7 @@
 #include "core/scanner.hpp"
 
 #include <ftxui/component/screen_interactive.hpp>
+#include <thread>
 
 #define DEFAULT_PATH "/"
 #define SIDEBAR_WIDTH 50
@@ -10,21 +11,8 @@
 int main() {
     using namespace ftxui;
 
-
     ScreenInteractive screen = ScreenInteractive::Fullscreen();
     ScanSnapshot snapshot;
-
-    // std::thread scan_thread([&] {
-        Scanner scanner(DEFAULT_PATH, &snapshot);
-        // scanner.setCallback([&]() {
-        //     std::lock_guard<std::mutex> lock(snapshot.tree_mutex);
-        //     screen.PostEvent(Event::Custom);
-        // });
-
-        scanner.scan();
-
-    //     screen.PostEvent(Event::Escape);
-    // });
 
     auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto piechart = ui::piechart(snapshot, DEFAULT_PATH);
@@ -45,7 +33,6 @@ int main() {
         }) | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
     });
     
-    // This is so that the sidebar is focusable
     auto leftbox_layout = Container::Horizontal({
         sidebar_panel,
     });
@@ -58,7 +45,25 @@ int main() {
         }) | border;
     });
 
+    std::thread scan_thread([&] {
+        Scanner scanner(DEFAULT_PATH, &snapshot);
+        
+        scanner.setCallback([&]() {
+            // sidebar->rebuild();
+            // piechart->rebuild();
+
+            screen.PostEvent(Event::Custom);
+        });
+
+        scanner.scan();
+
+        sidebar->rebuild();
+        piechart->rebuild();
+        screen.PostEvent(Event::Custom);
+    });
+    
+    scan_thread.detach();
     screen.Loop(ui);
-    // scan_thread.join();
+
     return 0;
 }

@@ -17,7 +17,6 @@ bool Scanner::isVirtualFs(const fs::path& path) {
         case 0x1cd1:       // aufs / overlayfs
         case 0x01021994:   // tmpfs
         case 0x19830326:   // cgroup
-        case 0x58465342:   // xfs
         case 0x65735546:   // fuse
             return true;
         default:

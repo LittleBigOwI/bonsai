@@ -39,7 +39,11 @@ namespace ui {
             this->path_ = path;
             this->build();
         }
-    
+
+        void rebuild() {
+            build();
+        }
+
     private:
         std::vector<RingSlice> slices;
         std::string selected_path_;

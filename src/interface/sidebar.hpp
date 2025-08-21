@@ -29,6 +29,10 @@ namespace ui {
             on_enter_callback_ = std::move(cb);
         }
 
+        void rebuild() {
+            build();
+        }
+
     private:
         int width_;
         int selected_ = 0;
