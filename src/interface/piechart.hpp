@@ -105,7 +105,7 @@ namespace ui {
             int x = static_cast<int>(cx + std::cos(angle_mid * M_PI / 180.0) * label_radius) - (slice.label.size() / 2) - 1;
             int y = static_cast<int>(cy + std::sin(angle_mid * M_PI / 180.0) * label_radius + 0.5);
 
-            c.DrawText(x, y, slice.label, [color](Pixel &p) {
+            c.DrawText((x - .5), y, slice.label, [color](Pixel &p) {
                 p.background_color = color.toFTXUIColor();
                 p.foreground_color = utils::getContrastColor(color);
             });
@@ -136,8 +136,8 @@ namespace ui {
                 size_t split = stats.find("\n");
                 std::string line1 = stats.substr(0, split);
                 std::string line2 = stats.substr(split + 1);
-                c.DrawText(cx - int(line1.size()) / 2, cy - 1, line1);
-                c.DrawText(cx - int(line2.size()) / 2, cy + 1, line2);
+                c.DrawText((cx - .5) - int(line1.size()) / 2, cy - 2, line1);
+                c.DrawText((cx - .5) - int(line2.size()) / 2, cy + 2, line2);
                 
                 double angle_offset = 0.0;
                 for (size_t j = 0; j < slices.size(); ++j) {
