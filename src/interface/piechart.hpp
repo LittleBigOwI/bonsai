@@ -19,15 +19,20 @@ namespace ui {
     struct RingSlice {
         double percent;
 
+        std::string path;
         std::string label;
         std::vector<RingSlice> children;
     };
 
     class PiechartComponent : public ComponentBase {
     public:
-        PiechartComponent(ScanSnapshot& snapshot, const std::string& path): snapshot_(snapshot), path_(path) {
+        PiechartComponent(ScanSnapshot& snapshot, const std::string& path): snapshot_(snapshot), path_(path), selected_path_("") {
             build();
             setup();
+        }
+
+        void setSelected(const std::string& path) {
+            this->selected_path_ = path;
         }
 
         void setPath(const std::string& path) {
@@ -36,11 +41,12 @@ namespace ui {
         }
     
     private:
-        std::string path_;
         std::vector<RingSlice> slices;
+        std::string selected_path_;
+        std::string path_;
         
-        Element canvas_;
         ScanSnapshot& snapshot_;
+        Element canvas_;
 
         double getPercentage(const std::string& path) {
             auto node = Scanner::getNode(path, snapshot_);
@@ -50,6 +56,7 @@ namespace ui {
 
         RingSlice buildSlices(const std::shared_ptr<TreeNode>& node, int depth, int max_depth) {
             RingSlice slice;
+            slice.path = node->cached_full_path;
             slice.label = node->name;
             slice.percent = getPercentage(node->cached_full_path.string());
 
@@ -136,6 +143,9 @@ namespace ui {
                 for (size_t j = 0; j < slices.size(); ++j) {
                     const auto& slice = slices[j];
                     utils::RGB color = utils::base_palette[j % utils::base_palette.size()];
+
+                    if(slice.path == this->selected_path_) 
+                        color = utils::white;
 
                     setupSlice(c, bonsai, slice, angle_offset, 0, cx, cy, radius, color);
                     angle_offset += slice.percent / 100.0 * 360.0;

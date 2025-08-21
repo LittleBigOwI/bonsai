@@ -12,11 +12,11 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
   - Percentage size usage labels for each item
 - Built using **CMake** and **FTXUI** for a modern TUI experience
 - Tree and hashmap-based data structure for efficient folder size lookups
-- Dynamic pie chart updates when navigating the sidebar  
+- Dynamic pie chart updates when navigating between folders in the sidebar  
+- Pie chart highlighting when hovering over folders or files  
 
 ## Planned Features
 
-- Pie chart highlighting when hovering over folders or files  
 - User customization via configuration file:
   - Colors
   - Icons

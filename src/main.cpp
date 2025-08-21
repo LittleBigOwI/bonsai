@@ -4,7 +4,7 @@
 
 #include <ftxui/component/screen_interactive.hpp>
 
-#define DEFAULT_PATH "/home/littlebigowl/Documents"
+#define DEFAULT_PATH "/"
 #define SIDEBAR_WIDTH 50
 
 int main() {
@@ -28,6 +28,10 @@ int main() {
 
     auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto piechart = ui::piechart(snapshot, DEFAULT_PATH);
+
+    sidebar->setOnChangeCallback([&](const std::string& path) {
+        piechart->setSelected(path);
+    });
 
     sidebar->setOnEnterCallback([&](const std::string& path) {
         piechart->setPath(path);

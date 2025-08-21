@@ -20,7 +20,11 @@ namespace ui {
             build();
             setup();
         }
-        
+
+        void setOnChangeCallback(std::function<void(const std::string&)> cb) {
+            on_change_callback_ = std::move(cb);
+        }
+
         void setOnEnterCallback(std::function<void(const std::string&)> cb) {
             on_enter_callback_ = std::move(cb);
         }
@@ -30,13 +34,29 @@ namespace ui {
         int selected_ = 0;
         std::string path_;
 
+        std::function<void(const std::string&)> on_change_callback_;
         std::function<void(const std::string&)> on_enter_callback_;
+
         std::vector<std::shared_ptr<TreeNode>> sorted_children_;
         std::vector<std::string> entries_;
         std::vector<bool> is_directory_;
         
         ScanSnapshot& snapshot_;
         Component menu_;
+
+        std::shared_ptr<TreeNode> getSelectedNode() {
+            if (selected_ < 0 || selected_ >= (int)entries_.size())
+                return nullptr;
+
+            if (entries_[selected_] == "..")
+                return nullptr;
+
+            int index = selected_ - (path_ != "/" ? 1 : 0);
+            if (index < 0 || index >= (int)sorted_children_.size())
+                return nullptr;
+
+            return sorted_children_[index];
+        }
 
         void build() {
             entries_.clear();
@@ -105,7 +125,14 @@ namespace ui {
                     : (row | bgcolor(Color::Default) | color(Color::White));
             };
 
-            option.on_enter = [this, &option]() {
+            option.on_change = [this]() {
+                auto node = getSelectedNode();
+                if(on_change_callback_) {
+                    on_change_callback_(node ? node->cached_full_path : "");
+                } 
+            };
+
+            option.on_enter = [this]() {
                 const std::string& selected_entry = entries_[selected_];
                 bool is_dir = is_directory_[selected_]; 
                 if (!is_dir) return;
@@ -122,8 +149,13 @@ namespace ui {
                 build();
 
                 if (on_enter_callback_)
+                    if(on_change_callback_) {
+                        auto node = getSelectedNode();
+                        on_change_callback_(node ? node->cached_full_path : "");
+                    }
+
                     on_enter_callback_(path_);
-                };
+            };
 
             menu_ = Menu(&entries_, &selected_, option);
             Add(menu_);
