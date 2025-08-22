@@ -1,4 +1,3 @@
-# Maintainer: Leora Orr <leora.orr@proton.me>
 pkgname=bonsai
 pkgver=1.0.0
 pkgrel=1
