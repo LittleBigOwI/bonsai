@@ -27,9 +27,21 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 - Add ability to remove files / folders
 
 ## Installation
+### Arch Linux (AUR)
+You can install Bonsai directly from the AUR:
 
-Currently, Bonsai must be built manually:
+```bash
+# Using an AUR helper like yay
+yay -S bonsai
 
+# Or manually with makepkg
+git clone https://aur.archlinux.org/bonsai.git
+cd bonsai
+makepkg -si
+```
+
+### Other Linux distributions
+Build manually from source:
 ```bash
 git clone https://github.com/LittleBigOwI/bonsai.git
 cd bonsai
