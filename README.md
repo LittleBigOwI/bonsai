@@ -3,6 +3,10 @@
 Bonsai is a terminal user interface (TUI) remake of the GNOME Baobab disk usage analyzer.  
 It provides a lightweight, fast, and visually structured way to explore disk usage on Linux systems directly in the terminal.
 
+<p align="center">
+  <img src="img/app.gif" alt="App preview" width="600">
+</p>
+
 ## Features
 
 - Navigable sidebar displaying folder sizes, sorted by a multithreaded scanning algorithm
@@ -15,16 +19,12 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 - Dynamic pie chart updates when navigating between folders in the sidebar  
 - Pie chart highlighting when hovering over folders or files 
 - Asynchronous UI rendering before scan completion
+- User customization via configuration file
 
 ## Planned Features
 
+- Visually better async rendering when scanning disk
 - Add ability to remove files / folders
-- User customization via configuration file:
-  - Colors
-  - Icons
-  - Sizes
-  - More options to come  
-- PKGBUILD for AUR installation  
 
 ## Installation
 
@@ -37,7 +37,3 @@ mkdir build && cd build
 cmake .. && make
 ./bonsai
 ```
-
-## Image Previews
-
-Coming soon.

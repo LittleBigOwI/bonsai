@@ -1,25 +1,20 @@
 #include "colors.hpp"
 
+#include "../config/config.hpp"
+
 #include <algorithm>
 
 namespace utils {    
-    const std::vector<RGB> base_palette = {
-        {255, 99, 71},     // Tomato Red
-        {30, 144, 255},    // Dodger Blue
-        {60, 179, 113},    // Medium Sea Green
-        {255, 165, 0},     // Orange
-        {186, 85, 211},    // Medium Orchid
-        {255, 215, 0},     // Gold
-        {70, 130, 180},    // Steel Blue
-        {255, 105, 180},   // Hot Pink
-        {154, 205, 50},    // Yellow Green
-        {255, 140, 0}      // Dark Orange
-    };
-
+    const std::vector<RGB> base_palette = []() -> std::vector<RGB> {
+        std::vector<RGB> v;
+        for (auto& arr : Config::get().CHART_COLORS) {
+            v.emplace_back(arr[0], arr[1], arr[2]);
+        }
+        return v;
+    }();
+    
     ftxui::Color RGB::toFTXUIColor() const {
-        return ftxui::Color::RGB(std::clamp(r, 0, 255),
-                                std::clamp(g, 0, 255),
-                                std::clamp(b, 0, 255));
+        return ftxui::Color::RGB(std::clamp(r, 0, 255), std::clamp(g, 0, 255), std::clamp(b, 0, 255));
     }
 
     RGB dim(const RGB& color, float factor) {

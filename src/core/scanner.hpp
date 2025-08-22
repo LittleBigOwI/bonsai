@@ -10,8 +10,6 @@
 
 namespace fs = std::filesystem;
 
-#define SCANNER_THREADS 16
-
 struct TreeNode {
     std::string name;
     std::atomic<uintmax_t> size{0};

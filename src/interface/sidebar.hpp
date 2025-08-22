@@ -5,12 +5,6 @@
 
 #include <ftxui/component/component.hpp>
 
-#define SIDEBAR_SELECTED_FOLDER_ICON ""
-#define SIDEBAR_SELECTED_FILE_ICON ""
-#define SIDEBAR_FOLDER_ICON ""
-#define SIDEBAR_FILE_ICON ""
-#define SIDEBAR_BACK_ICON ""
-
 namespace ui {
     using namespace ftxui;
 
@@ -105,11 +99,12 @@ namespace ui {
             option.entries_option.transform = [this](const EntryState& entry) {
                 const bool is_selected = entry.active;
                 const bool is_dir = is_directory_[entry.index];
-
+                
+                const Config& config = Config::get();
                 std::string label = entries_[entry.index];
-                std::string icon_str = label == ".." ? SIDEBAR_BACK_ICON : (is_selected
-                    ? (is_dir ? SIDEBAR_SELECTED_FOLDER_ICON : SIDEBAR_SELECTED_FILE_ICON)
-                    : (is_dir ? SIDEBAR_FOLDER_ICON : SIDEBAR_FILE_ICON)
+                std::string icon_str = label == ".." ? config.SIDEBAR_BACK_ICON : (is_selected
+                    ? (is_dir ? config.SIDEBAR_SELECTED_FOLDER_ICON : config.SIDEBAR_SELECTED_FILE_ICON)
+                    : (is_dir ? config.SIDEBAR_FOLDER_ICON : config.SIDEBAR_FILE_ICON)
                 );
 
                 std::shared_ptr<TreeNode> node = nullptr;

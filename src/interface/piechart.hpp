@@ -2,6 +2,7 @@
 
 #include "../widgets/canvas_ext.hpp"
 #include "../utils/dataformat.hpp"
+#include "../config/config.hpp"
 #include "../utils/colors.hpp"
 #include "../core/scanner.hpp"
 
@@ -9,9 +10,6 @@
 
 #include <algorithm>
 #include <cmath>
-
-#define CHART_MAX_SIZE_THRESHOLD_PERCENTAGE 2
-#define CHART_MAX_GENERATIONS 4
 
 namespace ui {
     using namespace ftxui;
@@ -64,12 +62,13 @@ namespace ui {
             slice.label = node->name;
             slice.percent = getPercentage(node->cached_full_path.string());
 
-            if (depth >= max_depth || slice.percent < CHART_MAX_SIZE_THRESHOLD_PERCENTAGE)
+            auto& config = Config::get();
+            if (depth >= max_depth || slice.percent < config.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE)
                 return slice;
 
             for (auto& child : node->children) {
                 double child_percent = getPercentage(child->cached_full_path.string());
-                if (child_percent < CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) continue;
+                if (child_percent < config.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) continue;
 
                 slice.children.push_back(buildSlices(child, depth + 1, max_depth));
             }
@@ -84,11 +83,12 @@ namespace ui {
             auto root_node = Scanner::getNode(path_, snapshot_);
             if (!root_node) return;
 
+            auto& config = Config::get();
             for (auto& child : root_node->children) {
                 double percent = getPercentage(child->cached_full_path.string());
-                if (percent < CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) continue;
+                if (percent < config.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) continue;
 
-                slices.push_back(buildSlices(child, 0, CHART_MAX_GENERATIONS - 1));
+                slices.push_back(buildSlices(child, 0, config.CHART_MAX_GENERATIONS - 1));
             }
             std::sort(slices.begin(), slices.end(), [](const RingSlice& a, const RingSlice& b) { return a.percent > b.percent; });
         }
@@ -115,9 +115,10 @@ namespace ui {
             });
 
             double child_offset = angle_offset;
+            auto& config = Config::get();
             for (size_t i = 0; i < slice.children.size(); ++i) {
                 const auto& child = slice.children[i];
-                utils::RGB child_color = utils::dim(color, 0.85 - (0.15 * i));
+                utils::RGB child_color = utils::dim(color, (1 - config.CHART_DIM_FACTOR) - (config.CHART_DIM_FACTOR * i));
 
                 setupSlice(c, bonsai, child, child_offset, depth + 1, cx, cy, base_radius, child_color);
                 child_offset += child.percent / 100.0 * 360.0;

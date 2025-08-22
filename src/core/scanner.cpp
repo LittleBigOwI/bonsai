@@ -1,5 +1,7 @@
 #include "scanner.hpp"
 
+#include "../config/config.hpp"
+
 #include <unordered_map>
 #include <sys/statfs.h>
 #include <algorithm>
@@ -193,7 +195,9 @@ void Scanner::scan() {
     }
 
     std::vector<std::thread> workers;
-    for (int i = 0; i < SCANNER_THREADS; ++i)
+    const Config& config = Config::get();
+
+    for (int i = 0; i < config.SCANNER_THREADS; ++i)
         workers.emplace_back(&Scanner::worker, this);
 
     for (auto& t : workers)

@@ -1,20 +1,24 @@
 #include "interface/piechart.hpp"
 #include "interface/sidebar.hpp"
+#include "config/config.hpp"
 #include "core/scanner.hpp"
 
 #include <ftxui/component/screen_interactive.hpp>
+
+#include <iostream>
 #include <thread>
 
 #define DEFAULT_PATH "/"
-#define SIDEBAR_WIDTH 50
 
 int main() {
     using namespace ftxui;
 
+    const Config& config = Config::get();
+
     ScreenInteractive screen = ScreenInteractive::Fullscreen();
     ScanSnapshot snapshot;
 
-    auto sidebar = ui::sidebar(snapshot, SIDEBAR_WIDTH, DEFAULT_PATH);    
+    auto sidebar = ui::sidebar(snapshot, config.SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto piechart = ui::piechart(snapshot, DEFAULT_PATH);
 
     sidebar->setOnChangeCallback([&](const std::string& path) {
@@ -30,7 +34,7 @@ int main() {
             text("Explorer") | bold | center,
             separator(),
             sidebar->Render() | vscroll_indicator | frame
-        }) | size(WIDTH, EQUAL, SIDEBAR_WIDTH);
+        }) | size(WIDTH, EQUAL, config.SIDEBAR_WIDTH);
     });
     
     auto leftbox_layout = Container::Horizontal({
