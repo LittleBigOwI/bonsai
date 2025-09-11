@@ -31,10 +31,10 @@ int main() {
 
     auto sidebar_panel = Renderer(sidebar, [&] {
         return vbox({
-            text("Explorer") | bold | center,
+            text("Explorer") | bold | center | color(Color::White),
             separator(),
             sidebar->Render() | vscroll_indicator | frame
-        }) | size(WIDTH, EQUAL, config.SIDEBAR_WIDTH);
+        }) | size(WIDTH, EQUAL, config.SIDEBAR_WIDTH) | border | color(Color::GrayDark);
     });
     
     auto leftbox_layout = Container::Horizontal({
@@ -44,9 +44,8 @@ int main() {
     auto ui = Renderer(leftbox_layout, [&] {
         return hbox({
             leftbox_layout->Render(),
-            separator(),
             piechart->Render(),
-        }) | border;
+        });
     });
 
     std::thread scan_thread([&] {
