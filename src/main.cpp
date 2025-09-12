@@ -8,7 +8,25 @@
 #include <iostream>
 #include <thread>
 
-#define DEFAULT_PATH "/"
+#define DEFAULT_PATH "/home/littlebigowl/Documents/Code/Cpp/bonsai"
+
+// ftxui::Component ModalComponent(std::string subtitle, std::function<void()> do_nothing, std::function<void()> hide_modal) {
+//     auto component = ftxui::Container::Vertical({
+//         ftxui::Button("Do nothing", do_nothing, ftxui::ButtonOption::Animated()),
+//         ftxui::Button("Quit modal", hide_modal, ftxui::ButtonOption::Animated()),
+//     });
+//     component |= ftxui::Renderer([&](ftxui::Element inner) {
+//         return ftxui::vbox({
+//             ftxui::text("Modal component"),
+//             ftxui::text(subtitle),
+//             ftxui::separator(),
+//             inner,
+//         })
+//         | ftxui::size(ftxui::WIDTH, ftxui::GREATER_THAN, 30)
+//         | ftxui::border;
+//     });
+//     return component;
+// }
 
 int main() {
     using namespace ftxui;
@@ -42,11 +60,23 @@ int main() {
     });
     
     auto ui = Renderer(leftbox_layout, [&] {
-        return hbox({
+        auto content = hbox({
+            text(sidebar->getPath()),
             leftbox_layout->Render(),
             piechart->Render(),
         });
+
+        return content;
     });
+
+    // bool modal_shown = true;
+
+    // auto show_modal = [&] { modal_shown = true; };
+    // auto hide_modal = [&] { modal_shown = false; };
+
+    // auto modal_component = ModalComponent(sidebar->getPath(), [&] {}, hide_modal);
+
+    // ui |= Modal(modal_component, &modal_shown);
 
     std::thread scan_thread([&] {
         Scanner scanner(DEFAULT_PATH, &snapshot);

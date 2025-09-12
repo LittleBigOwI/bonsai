@@ -27,6 +27,10 @@ namespace ui {
             build();
         }
 
+        std::string getPath() {
+            return path_;
+        }
+
     private:
         int width_;
         int selected_ = 0;
