@@ -20,11 +20,12 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 - Pie chart highlighting when hovering over folders or files 
 - Asynchronous UI rendering before scan completion
 - User customization via configuration file
+- Ability to remove files / folders
 
 ## Planned Features
 
 - Visually better async rendering when scanning disk
-- Add ability to remove files / folders
+- Cleaner pie chart labels
 
 ## Installation
 ### Arch Linux (AUR)
