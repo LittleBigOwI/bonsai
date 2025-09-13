@@ -1,4 +1,6 @@
 #include "interface/modals/confirm.hpp"
+#include "interface/modals/error.hpp"
+
 #include "interface/piechart.hpp"
 #include "interface/sidebar.hpp"
 #include "config/config.hpp"
@@ -23,13 +25,16 @@ int main() {
     auto sidebar = ui::sidebar(snapshot, config.SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto piechart = ui::piechart(snapshot, DEFAULT_PATH);
 
-    bool modal_shown = false;
+    bool confirm_modal_shown = false;
+    auto show_confirm_modal = [&] { confirm_modal_shown = true; };
+    auto hide_confirm_modal = [&] { confirm_modal_shown = false; };
 
-    auto show_modal = [&] { modal_shown = true; };
-    auto hide_modal = [&] { modal_shown = false; };
+    bool error_modal_shown = false;
+    auto show_error_modal = [&] { error_modal_shown = true; };
+    auto hide_error_modal = [&] { error_modal_shown = false; };
 
     sidebar->setOnDeleteCallback([&](const std::string& path) {
-        show_modal();
+        show_confirm_modal();
     });
 
     sidebar->setOnChangeCallback([&](const std::string& path) {
@@ -68,20 +73,37 @@ int main() {
         "cancel"
     );
 
+    auto error_modal = ui::error(
+        "Error while deleting file / folder.",
+        "close"
+    );
+
     confirm_modal->setOnConfirmCallback([&] {
         auto node = sidebar->getSelectedNode();
         if(!node) return;
-        scanner.deleteNode(node);
-        hide_modal();
-        sidebar->rebuild();
-        piechart->rebuild();
+        
+        int status = scanner.deleteNode(node);
+
+        hide_confirm_modal();
+        if(status == 0) {
+            sidebar->rebuild();
+            piechart->rebuild();
+        } else {
+            error_modal->setStatusCode(status);
+            show_error_modal();   
+        }
+    });
+
+    error_modal->setOnCloseCallback([&] {
+        hide_error_modal();
     });
 
     confirm_modal->setOnCloseCallback([&] {
-        hide_modal();
+        hide_confirm_modal();
     });
 
-    ui |= Modal(confirm_modal, &modal_shown);
+    ui |= Modal(error_modal, &error_modal_shown);
+    ui |= Modal(confirm_modal, &confirm_modal_shown);
 
     std::thread scan_thread([&] {
         

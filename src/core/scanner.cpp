@@ -143,8 +143,26 @@ void Scanner::worker() {
     }
 }
 
-void Scanner::deleteNode(const std::shared_ptr<TreeNode>& node) {
+int Scanner::deleteNode(const std::shared_ptr<TreeNode>& node) {
+    const auto& path = node->cached_full_path;
+    std::error_code ec;
+
+    if (!fs::exists(path, ec)) {
+        return ec.value() != 0 ? ec.value() : static_cast<int>(std::errc::no_such_file_or_directory);
+    }
+
+    if (fs::is_directory(path, ec)) {
+        fs::remove_all(path, ec);
+    } else {
+        fs::remove(path, ec);
+    }
+
+    if (ec) {
+        return ec.value();
+    }
+
     deleteNodeRec(node, true);
+    return 0;
 }
 
 void Scanner::deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_level) {
