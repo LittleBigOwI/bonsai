@@ -1,3 +1,4 @@
+#include "interface/modals/confirm.hpp"
 #include "interface/piechart.hpp"
 #include "interface/sidebar.hpp"
 #include "config/config.hpp"
@@ -8,25 +9,7 @@
 #include <iostream>
 #include <thread>
 
-#define DEFAULT_PATH "/home/littlebigowl/Documents/Code/Cpp/bonsai"
-
-// ftxui::Component ModalComponent(std::string subtitle, std::function<void()> do_nothing, std::function<void()> hide_modal) {
-//     auto component = ftxui::Container::Vertical({
-//         ftxui::Button("Do nothing", do_nothing, ftxui::ButtonOption::Animated()),
-//         ftxui::Button("Quit modal", hide_modal, ftxui::ButtonOption::Animated()),
-//     });
-//     component |= ftxui::Renderer([&](ftxui::Element inner) {
-//         return ftxui::vbox({
-//             ftxui::text("Modal component"),
-//             ftxui::text(subtitle),
-//             ftxui::separator(),
-//             inner,
-//         })
-//         | ftxui::size(ftxui::WIDTH, ftxui::GREATER_THAN, 30)
-//         | ftxui::border;
-//     });
-//     return component;
-// }
+#define DEFAULT_PATH "/home/littlebigowl/Downloads"
 
 int main() {
     using namespace ftxui;
@@ -34,10 +17,21 @@ int main() {
     const Config& config = Config::get();
 
     ScreenInteractive screen = ScreenInteractive::Fullscreen();
+    
     ScanSnapshot snapshot;
+    Scanner scanner(DEFAULT_PATH, &snapshot);
 
     auto sidebar = ui::sidebar(snapshot, config.SIDEBAR_WIDTH, DEFAULT_PATH);    
     auto piechart = ui::piechart(snapshot, DEFAULT_PATH);
+
+    bool modal_shown = false;
+
+    auto show_modal = [&] { modal_shown = true; };
+    auto hide_modal = [&] { modal_shown = false; };
+
+    sidebar->setOnDeleteCallback([&](const std::string& path) {
+        show_modal();
+    });
 
     sidebar->setOnChangeCallback([&](const std::string& path) {
         piechart->setSelected(path);
@@ -68,17 +62,29 @@ int main() {
         return content;
     });
 
-    // bool modal_shown = true;
+    auto confirm_modal = ui::confirm(
+        "Are you sure you want to",
+        "remove the selected file / folder?",
+        "confirm", 
+        "cancel"
+    );
 
-    // auto show_modal = [&] { modal_shown = true; };
-    // auto hide_modal = [&] { modal_shown = false; };
+    confirm_modal->setOnConfirmCallback([&] {
+        auto node = sidebar->getSelectedNode();
+        if(!node) return;
+        scanner.deleteNode(node);
+        hide_modal();
+        sidebar->rebuild();
+        piechart->rebuild();
+    });
 
-    // auto modal_component = ModalComponent(sidebar->getPath(), [&] {}, hide_modal);
+    confirm_modal->setOnCloseCallback([&] {
+        hide_modal();
+    });
 
-    // ui |= Modal(modal_component, &modal_shown);
+    ui |= Modal(confirm_modal, &modal_shown);
 
     std::thread scan_thread([&] {
-        Scanner scanner(DEFAULT_PATH, &snapshot);
         
         scanner.setCallback([&]() {
             // sidebar->rebuild();
@@ -96,6 +102,13 @@ int main() {
     
     scan_thread.detach();
     screen.Loop(ui);
+
+    // Scanner::printSnapshot(scanner.getNode("/", snapshot));
+    // std::cout << "\n\n\n\n\n\n";
+    // scanner.deleteNode(scanner.getNode("/home/littlebigowl/Downloads/iso", snapshot));
+    // std::cout << "\n\n\n\n\n\n";
+    // Scanner::printSnapshot(scanner.getNode("/", snapshot));
+
 
     return 0;
 }

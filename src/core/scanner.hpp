@@ -50,10 +50,11 @@ public:
     }
 
     void scan();
+    void deleteNode(const std::shared_ptr<TreeNode>& node);
     void setCallback(std::function<void()> callback) { update_callback_ = std::move(callback); }
-
-    static std::shared_ptr<TreeNode> getNode(const std::string& path, ScanSnapshot& snapshot);
+    
     static void printSnapshot(const std::shared_ptr<TreeNode>& node, int depth = 0);
+    static std::shared_ptr<TreeNode> getNode(const std::string& path, ScanSnapshot& snapshot);
 
 private:
     struct DirTask {
@@ -70,8 +71,10 @@ private:
     std::condition_variable cv_;
     std::atomic<int> active_tasks_{0};
 
-    void enqueue(const fs::path& path, std::shared_ptr<TreeNode> parent_node);
     void worker();
+    void deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_level);
+    void enqueue(const fs::path& path, std::shared_ptr<TreeNode> parent_node);
+    
     bool isVirtualFs(const fs::path& path);
     fs::path getFullPath(const std::shared_ptr<TreeNode>& node);
 };

@@ -143,6 +143,54 @@ void Scanner::worker() {
     }
 }
 
+void Scanner::deleteNode(const std::shared_ptr<TreeNode>& node) {
+    deleteNodeRec(node, true);
+}
+
+void Scanner::deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_level) {
+    if (!node) return;
+
+    uintmax_t total_size = 0;
+    uintmax_t total_files = 0;
+    uintmax_t total_folders = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(node->node_mutex);
+        total_size = node->size.load(std::memory_order_relaxed);
+        total_files = node->files.load(std::memory_order_relaxed);
+        total_folders = node->folders.load(std::memory_order_relaxed);
+    }
+
+    auto parent = node->parent.lock();
+    parent->files.fetch_sub(node->is_dir ? 0 : 1, std::memory_order_relaxed);
+    parent->folders.fetch_sub(node->is_dir ? 1 : 0, std::memory_order_relaxed);
+
+    if (parent) {
+        std::lock_guard<std::mutex> lock(parent->node_mutex);
+        parent->children.erase(
+            std::remove_if(parent->children.begin(), parent->children.end(), [&](const std::shared_ptr<TreeNode>& n){ return n == node; }),
+            parent->children.end()
+        );     
+    }
+
+    snapshot_->node_map.erase(node->cached_full_path);
+    for (auto& child : node->children) {
+        deleteNodeRec(child, false);
+    }
+
+    if(!top_level) return;
+
+    auto current = parent;
+    while(current) {
+        current->size.fetch_sub(total_size, std::memory_order_relaxed);
+        current = current->parent.lock();       
+    }   
+
+    snapshot_->total_size.fetch_sub(total_size, std::memory_order_relaxed);
+    snapshot_->total_files.fetch_sub(total_files, std::memory_order_relaxed);
+    snapshot_->total_dirs.fetch_sub(total_folders, std::memory_order_relaxed);
+}
+
 void Scanner::scan() {
     fs::path path = root_;
     std::vector<std::string> ancestors;
@@ -204,14 +252,7 @@ void Scanner::scan() {
         t.join();
 }
 
-std::shared_ptr<TreeNode> Scanner::getNode(const std::string& path, ScanSnapshot& snapshot) {
-    std::lock_guard<std::mutex> lock(snapshot.node_map_mutex);
-    auto it = snapshot.node_map.find(path);
-    if (it != snapshot.node_map.end()) return it->second;
-    return nullptr;
-}
-
-void printSnapshot(const std::shared_ptr<TreeNode>& node, int depth = 0) {
+void Scanner::printSnapshot(const std::shared_ptr<TreeNode>& node, int depth) {
     if (!node || depth >= 5) return;
     
     std::string indent(depth * 2, ' ');
@@ -224,4 +265,11 @@ void printSnapshot(const std::shared_ptr<TreeNode>& node, int depth = 0) {
     for (auto& child : node->children) {
         printSnapshot(child, depth + 1);
     }
+}
+
+std::shared_ptr<TreeNode> Scanner::getNode(const std::string& path, ScanSnapshot& snapshot) {
+    std::lock_guard<std::mutex> lock(snapshot.node_map_mutex);
+    auto it = snapshot.node_map.find(path);
+    if (it != snapshot.node_map.end()) return it->second;
+    return nullptr;
 }

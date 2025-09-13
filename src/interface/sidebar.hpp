@@ -4,6 +4,7 @@
 #include "../core/scanner.hpp"
 
 #include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
 
 namespace ui {
     using namespace ftxui;
@@ -13,6 +14,10 @@ namespace ui {
         SidebarComponent(ScanSnapshot& snapshot, int width, const std::string& path): snapshot_(snapshot), width_(width), path_(path) {
             build();
             setup();
+        }
+
+        void setOnDeleteCallback(std::function<void(const std::string&)> cb) {
+            on_delete_callback_ = std::move(cb);
         }
 
         void setOnChangeCallback(std::function<void(const std::string&)> cb) {
@@ -26,35 +31,11 @@ namespace ui {
         void rebuild() {
             build();
         }
+        
 
         std::string getPath() {
             return path_;
         }
-
-        bool OnEvent(Event event) override {
-            if (event != Event::Delete || !on_delete_callback_)
-                return ComponentBase::OnEvent(event);
-            
-            auto node = getSelectedNode();
-            on_delete_callback_(node ? node->cached_full_path : "");
-            return true;
-        }
-
-    private:
-        int width_;
-        int selected_ = 0;
-        std::string path_;
-
-        std::function<void(const std::string&)> on_change_callback_;
-        std::function<void(const std::string&)> on_delete_callback_;
-        std::function<void(const std::string&)> on_enter_callback_;
-
-        std::vector<std::shared_ptr<TreeNode>> sorted_children_;
-        std::vector<std::string> entries_;
-        std::vector<bool> is_directory_;
-        
-        ScanSnapshot& snapshot_;
-        Component menu_;
 
         std::shared_ptr<TreeNode> getSelectedNode() {
             if (selected_ < 0 || selected_ >= (int)entries_.size())
@@ -69,6 +50,32 @@ namespace ui {
 
             return sorted_children_[index];
         }
+
+        bool OnEvent(Event event) override {
+            if (event != Event::Delete || !on_delete_callback_ || entries_[selected_] == "..")
+                return ComponentBase::OnEvent(event);
+            
+            auto node = getSelectedNode();
+            
+            on_delete_callback_(node ? node->cached_full_path : "");
+            return true;
+        }
+
+    private:
+        int width_;
+        int selected_ = 0;
+        std::string path_;
+
+        std::function<void(const std::string&)> on_delete_callback_;
+        std::function<void(const std::string&)> on_change_callback_;
+        std::function<void(const std::string&)> on_enter_callback_;
+
+        std::vector<std::shared_ptr<TreeNode>> sorted_children_;
+        std::vector<std::string> entries_;
+        std::vector<bool> is_directory_;
+        
+        ScanSnapshot& snapshot_;
+        Component menu_;
 
         void build() {
             entries_.clear();
