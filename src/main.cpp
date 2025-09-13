@@ -61,7 +61,6 @@ int main() {
     
     auto ui = Renderer(leftbox_layout, [&] {
         auto content = hbox({
-            text(sidebar->getPath()),
             leftbox_layout->Render(),
             piechart->Render(),
         });

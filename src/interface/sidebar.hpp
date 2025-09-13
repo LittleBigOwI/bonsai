@@ -31,12 +31,22 @@ namespace ui {
             return path_;
         }
 
+        bool OnEvent(Event event) override {
+            if (event != Event::Delete || !on_delete_callback_)
+                return ComponentBase::OnEvent(event);
+            
+            auto node = getSelectedNode();
+            on_delete_callback_(node ? node->cached_full_path : "");
+            return true;
+        }
+
     private:
         int width_;
         int selected_ = 0;
         std::string path_;
 
         std::function<void(const std::string&)> on_change_callback_;
+        std::function<void(const std::string&)> on_delete_callback_;
         std::function<void(const std::string&)> on_enter_callback_;
 
         std::vector<std::shared_ptr<TreeNode>> sorted_children_;
