@@ -6,7 +6,6 @@
 
 #include <ftxui/component/screen_interactive.hpp>
 
-#include <iostream>
 #include <thread>
 
 #define DEFAULT_PATH "/home/littlebigowl/Downloads"
@@ -89,7 +88,6 @@ int main() {
         scanner.setCallback([&]() {
             // sidebar->rebuild();
             // piechart->rebuild();
-
             screen.PostEvent(Event::Custom);
         });
 
@@ -102,13 +100,6 @@ int main() {
     
     scan_thread.detach();
     screen.Loop(ui);
-
-    // Scanner::printSnapshot(scanner.getNode("/", snapshot));
-    // std::cout << "\n\n\n\n\n\n";
-    // scanner.deleteNode(scanner.getNode("/home/littlebigowl/Downloads/iso", snapshot));
-    // std::cout << "\n\n\n\n\n\n";
-    // Scanner::printSnapshot(scanner.getNode("/", snapshot));
-
 
     return 0;
 }
