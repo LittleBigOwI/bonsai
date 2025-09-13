@@ -161,13 +161,6 @@ int Scanner::deleteNode(const std::shared_ptr<TreeNode>& node) {
         return ec.value();
     }
 
-    deleteNodeRec(node, true);
-    return 0;
-}
-
-void Scanner::deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_level) {
-    if (!node) return;
-
     uintmax_t total_size = 0;
     uintmax_t total_files = 0;
     uintmax_t total_folders = 0;
@@ -192,11 +185,12 @@ void Scanner::deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_leve
     }
 
     snapshot_->node_map.erase(node->cached_full_path);
-    for (auto& child : node->children) {
-        deleteNodeRec(child, false);
-    }
 
-    if(!top_level) return;
+    // This frees all the memory but takes too long...
+    // Everything below this loop should be executed once.
+    // for (auto& child : node->children) {
+    //     deleteNodeRec(child, false);
+    // }
 
     auto current = parent;
     while(current) {
@@ -207,6 +201,7 @@ void Scanner::deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_leve
     snapshot_->total_size.fetch_sub(total_size, std::memory_order_relaxed);
     snapshot_->total_files.fetch_sub(total_files, std::memory_order_relaxed);
     snapshot_->total_dirs.fetch_sub(total_folders, std::memory_order_relaxed);
+    return 0;
 }
 
 void Scanner::scan() {

@@ -10,7 +10,7 @@
 
 #include <thread>
 
-#define DEFAULT_PATH "/home/littlebigowl/Downloads"
+#define DEFAULT_PATH "/"
 
 int main() {
     using namespace ftxui;

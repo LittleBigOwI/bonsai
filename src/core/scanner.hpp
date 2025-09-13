@@ -73,7 +73,6 @@ private:
     std::atomic<int> active_tasks_{0};
 
     void worker();
-    void deleteNodeRec(const std::shared_ptr<TreeNode>& node, bool top_level);
     void enqueue(const fs::path& path, std::shared_ptr<TreeNode> parent_node);
 
     bool isVirtualFs(const fs::path& path);
