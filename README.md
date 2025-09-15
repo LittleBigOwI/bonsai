@@ -26,6 +26,9 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 
 - Visually better async rendering when scanning disk
 - Cleaner pie chart labels
+- Ability to quit using something else than CTRL+C
+- Ability to search for folders
+- Ability to sort folders
 
 ## Installation
 ### Arch Linux (AUR)
@@ -42,6 +45,8 @@ makepkg -si
 ```
 
 ### Other Linux distributions
+Make sure you've installed the correct version of ftxui (usually the latest one).
+
 Build manually from source:
 ```bash
 git clone https://github.com/LittleBigOwI/bonsai.git
