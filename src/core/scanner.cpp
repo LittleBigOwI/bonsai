@@ -176,6 +176,8 @@ int Scanner::deleteNode(const std::shared_ptr<TreeNode>& node) {
     }
 
     auto parent = node->parent.lock();
+    if (!parent) return static_cast<int>(std::errc::invalid_argument);
+    
     parent->files.fetch_sub(node->is_dir ? 0 : 1, std::memory_order_relaxed);
     parent->folders.fetch_sub(node->is_dir ? 1 : 0, std::memory_order_relaxed);
 
