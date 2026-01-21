@@ -1,3 +1,14 @@
+/* CONFIG MANAGEMENT FOR BONSAI
+Explanation:
+- This class handles loading Bonsai's configuration from ~/.config/bonsai/bonsai.conf
+- It provides default values if the file doesn't exist
+- Configuration values include sidebar icons, chart parameters, colors, and UI sizing
+- Singleton pattern ensures only one Config object exists at runtime
+- The parser reads key=value lines, trims whitespace, and converts to the appropriate type
+- Complex values (like CHART_COLORS) are parsed from array blocks in the config
+- All file I/O, directory creation, and parsing errors are safely handled
+*/
+
 #pragma once
 
 #include "gen/defaults.hpp"
@@ -22,14 +33,18 @@ class Config {
     std::string SIDEBAR_FOLDER_ICON;
     std::string SIDEBAR_FILE_ICON;
     std::string SIDEBAR_BACK_ICON;
-    
+
     int CHART_MAX_SIZE_THRESHOLD_PERCENTAGE;
     int CHART_MAX_GENERATIONS;
     int SIDEBAR_WIDTH;
 
     double CHART_DIM_FACTOR;
 
-    // Singleton
+    /* Lazy initialization using a lambda:
+    - Ensures config is loaded once at first access
+    - If the config file does not exist, create it with defaults
+    - Parse the file, or throw if invalid
+    */
     static const Config& get() {
         static Config instance = []() -> Config {
             if (!ensureConfigFile()) throw std::runtime_error("Cannot create config file");
@@ -43,6 +58,7 @@ class Config {
     }
 
 private:
+    // Returns path to ~/.config/bonsai/bonsai.conf or empty string if HOME not set
     inline static std::string getUserConfigPath() {
         const char* home = getenv("HOME");
         if (!home) { return ""; }
@@ -50,6 +66,7 @@ private:
         return std::string(home) + "/.config/bonsai/bonsai.conf";
     }
 
+    // Writes the default configuration binary to the given path
     inline static bool writeDefaultConfig(const std::string& path) {
         std::ofstream out(path, std::ios::binary);
         if (!out.is_open()) { return false; }
@@ -58,6 +75,11 @@ private:
         return true;
     }
 
+    /* Ensures the config file exists:
+    - Creates parent directories if needed
+    - Writes default config if file doesn't exist
+    - Returns true if file is ready
+    */
     inline static bool ensureConfigFile() {
         std::string config_path = getUserConfigPath();
         fs::path config_dir = fs::path(config_path).parent_path();
@@ -68,6 +90,13 @@ private:
         return true;
     }
 
+    /* Reads a config file and populates a Config object:
+    - Ignores empty lines and comments (#)
+    - Splits lines by '=' into key/value
+    - Trims leading/trailing spaces and tabs
+    - Converts values to int, double, or string as appropriate
+    - Special handling for CHART_COLORS array block
+    */
     inline static std::optional<Config> parseConfigFile(const std::string& config_path) {
         std::ifstream in(config_path);
         if (!in.is_open()) return std::nullopt;
@@ -75,18 +104,19 @@ private:
         Config cfg;
         std::string line;
         
-        // Remove tabs and trailing spaces
+        // Trim leading and trailing whitespace
         auto trim = [](std::string& s) {
             s.erase(0, s.find_first_not_of(" \t"));
             s.erase(s.find_last_not_of(" \t") + 1);
         };
 
         while (std::getline(in, line)) {
+            // Skip comments and empty lines
             if (line.empty() || line[0] == '#') 
                 continue;
             
+            // Skip malformed lines
             size_t eq = line.find('=');
-
             if (eq == std::string::npos)
                 continue;
             
@@ -140,6 +170,7 @@ private:
                         }
                     }
 
+                    // Parse RGB tuples from the block
                     std::stringstream ss(colors_block);
                     std::string tuple;
 
