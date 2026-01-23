@@ -17,18 +17,13 @@ set(SRC
     src/main.cpp
     
     src/core/scanner.cpp
-
-    src/utils/colors.cpp
-    src/utils/dataformat.cpp
-    
-    src/widgets/canvas_ext.cpp
 )
 
 # Embed default config
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/gen)
 
 set(GENERATED_HEADER_NAME defaults)
-set(DEFAULT_CONF ${CMAKE_CURRENT_SOURCE_DIR}/src/res/bonsai.default.conf)
+set(DEFAULT_CONF ${CMAKE_CURRENT_SOURCE_DIR}/res/bonsai.default.conf)
 set(GENERATED_HEADER ${CMAKE_CURRENT_BINARY_DIR}/gen/${GENERATED_HEADER_NAME}.hpp)
 
 add_custom_command(
