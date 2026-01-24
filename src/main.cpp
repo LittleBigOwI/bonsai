@@ -10,14 +10,16 @@
 int main() {
     using namespace ftxui;
 
-    Scanner::scan(DEFAULT_PATH);
+    Scanner s = Scanner(DEFAULT_PATH);
+    
+    std::thread t([&s]() { s.scan(); });
 
-    for (int i = 0; i < 10; i++) {
-        uint64_t size = Scanner::get("/home");
-
-        std::cout << "/home size: " << size << " bytes\n";
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+    for(int i = 0; i < 100; i++) {
+        std::cout << s.get("/") << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    t.join();
 
     return 0;
 }
