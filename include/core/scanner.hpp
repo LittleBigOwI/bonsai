@@ -19,11 +19,22 @@ Explanation:
 namespace fs = std::filesystem;
 
 class Scanner {
+public:
+    Scanner(const fs::path& _path) : path(_path) {};
+
+    void scan();
+    void stop();
+
+    uint64_t get(const fs::path& path);
+    
 private:
     fs::path path;
 
     std::unordered_map<std::string, uint64_t> dir_sizes;
     std::mutex map_mutex;
+
+    std::mutex stop_mutex;
+    bool done = false;
 
     /* Inode struct
        - Represents a filesystem inode (device + inode number)
@@ -60,11 +71,4 @@ private:
        - Updates `dir_sizes` in a thread-safe manner.
     */
     uint64_t computeDirSizes(const fs::path& dir);
-
-public:
-    Scanner(const fs::path& _path) : path(_path) {};
-
-    void scan();
-
-    uint64_t get(const fs::path& path);
 };

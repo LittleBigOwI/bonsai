@@ -17,6 +17,8 @@ set(SRC
     src/main.cpp
     
     src/core/scanner.cpp
+
+    src/ui/menu.cpp
 )
 
 # Embed default config

@@ -34,6 +34,11 @@ bool Scanner::isVirtualFs(const fs::path& path) {
 }
 
 uint64_t Scanner::computeDirSizes(const fs::path& dir) {
+    {
+        std::lock_guard<std::mutex> lock(stop_mutex);
+        if(this->done) { return 0; }
+    }
+
     uint64_t total_size = 0;
 
     if (!fs::exists(dir) || !fs::is_directory(dir) || isVirtualFs(dir))
@@ -85,4 +90,11 @@ uint64_t Scanner::get(const fs::path& path) {
 
 void Scanner::scan() {
     computeDirSizes(this->path);
+}
+
+void Scanner::stop() {
+    {
+        std::lock_guard lock(stop_mutex);
+        this->done = true;
+    }
 }
