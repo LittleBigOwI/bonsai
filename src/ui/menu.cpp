@@ -1,5 +1,7 @@
 #include "../../include/ui/menu.hpp"
 
+#include "../../include/utils/format.hpp"
+
 void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, const fs::path& default_path) {
     while (true) {
         std::vector<BonsaiMenuEntry> new_entries;
@@ -100,7 +102,7 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenu
         auto row = hbox({
             text(" " + icon_str + " " + item.label) | size(WIDTH, LESS_THAN, SIDEBAR_WIDTH - 15),
             filler(),
-            // text(toReadableShort(item.size)) | color(Color::GrayDark)
+            text(FormatUtils::toReadableShort(item.size)) | color(Color::GrayDark)
         });
 
         return is_selected ? row | bgcolor(Color::White) | color(Color::Black)
