@@ -23,13 +23,6 @@ Note that directory sizes aren't computed (scanner's job)
 #include <ftxui/component/component.hpp>
 #include <filesystem>
 
-#define SIDEBAR_WIDTH 50
-#define SIDEBAR_SELECTED_FOLDER_ICON ""
-#define SIDEBAR_SELECTED_FILE_ICON ""
-#define SIDEBAR_FOLDER_ICON ""
-#define SIDEBAR_FILE_ICON ""
-#define SIDEBAR_BACK_ICON ""
-
 using namespace ftxui;
 
 namespace fs = std::filesystem;

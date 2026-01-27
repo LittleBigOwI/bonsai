@@ -26,6 +26,7 @@ Explanation:
 namespace fs = std::filesystem;
 
 class Config {
+public:
     std::vector<std::array<int, 3>> CHART_COLORS;
 
     std::string SIDEBAR_SELECTED_FOLDER_ICON;

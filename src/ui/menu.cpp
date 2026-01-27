@@ -1,5 +1,6 @@
 #include "../../include/ui/menu.hpp"
 
+#include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
 void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, const fs::path& default_path) {
@@ -90,17 +91,18 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenu
     options.entries_option.transform = [data](const EntryState& entry_state) {
         const auto& item = (*data->entries)[entry_state.index];
         const bool is_selected = entry_state.active;
+        const Config& config = Config::get();
 
         std::string icon_str;
         if (item.label == "..") {
-            icon_str = SIDEBAR_BACK_ICON;
+            icon_str = config.SIDEBAR_BACK_ICON;
         } else {
-            icon_str = is_selected ? (item.is_dir ? SIDEBAR_SELECTED_FOLDER_ICON : SIDEBAR_SELECTED_FILE_ICON)
-                                   : (item.is_dir ? SIDEBAR_FOLDER_ICON          : SIDEBAR_FILE_ICON);
+            icon_str = is_selected ? (item.is_dir ? config.SIDEBAR_SELECTED_FOLDER_ICON : config.SIDEBAR_SELECTED_FILE_ICON)
+                                   : (item.is_dir ? config.SIDEBAR_FOLDER_ICON          : config.SIDEBAR_FILE_ICON);
         }
 
         auto row = hbox({
-            text(" " + icon_str + " " + item.label) | size(WIDTH, LESS_THAN, SIDEBAR_WIDTH - 15),
+            text(" " + icon_str + " " + item.label) | size(WIDTH, LESS_THAN, Config::get().SIDEBAR_WIDTH - 15),
             filler(),
             text(FormatUtils::toReadableShort(item.size)) | color(Color::GrayDark)
         });

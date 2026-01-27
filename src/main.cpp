@@ -1,5 +1,5 @@
+#include "../include/config/config.hpp"
 #include "../include/core/scanner.hpp"
-
 #include "../include/ui/menu.hpp"
 
 #include <ftxui/component/screen_interactive.hpp>
@@ -11,6 +11,8 @@
 
 int main() {
     using namespace ftxui;
+
+    Config config = Config::get();
 
     // Launch scanner
     Scanner scanner = Scanner(DEFAULT_PATH);
@@ -48,7 +50,7 @@ int main() {
                 text(" "),
                 separator(),
                 hbox({
-                    menu_component->Render() | size(WIDTH, EQUAL, SIDEBAR_WIDTH) | frame,
+                    menu_component->Render() | size(WIDTH, EQUAL, config.SIDEBAR_WIDTH) | frame,
                     text(" ")
                 })
             }),
