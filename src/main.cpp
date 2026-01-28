@@ -32,7 +32,7 @@ int main() {
 
     /* Init menu:
     - Use a container to keep focus through the entire render.
-      If a menu component is embeded in a slew of elements, it becomes static)
+      If a menu component is embeded in a slew of elements, it becomes static
     */
     auto menu_component = BonsaiMenu::menu(&screen, data, &selected, DEFAULT_PATH, option);
     auto menu_container = Container::Vertical({menu_component});
@@ -46,8 +46,7 @@ int main() {
         return hbox({
             vbox({
                 text(" "),
-                // menu_title("Explorer")->Render(),
-                text(" "),
+                text("Explorer") | center | bold,
                 separator(),
                 hbox({
                     menu_component->Render() | size(WIDTH, EQUAL, config.SIDEBAR_WIDTH) | frame,
