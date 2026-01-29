@@ -37,9 +37,9 @@ private:
     bool done = false;
 
     /* Inode struct
-       - Represents a filesystem inode (device + inode number)
-       - Used to avoid double-counting hard links
-       - Fully private and only visible inside Scanner
+    - Represents a filesystem inode (device + inode number)
+    - Used to avoid double-counting hard links
+    - Fully private and only visible inside Scanner
     */
     struct Inode {
         dev_t dev;  // Device ID
@@ -51,8 +51,8 @@ private:
     };
 
     /* InodeHash struct
-       - Hash function for unordered_set of Inode
-       - Combines device ID and inode number
+    - Hash function for unordered_set of Inode
+    - Combines device ID and inode number
     */
     struct InodeHash {
         std::size_t operator()(const Inode& i) const {
@@ -65,10 +65,10 @@ private:
     bool isVirtualFs(const fs::path& path);
 
     /* computeDirSizes(dir)
-       - Recursively computes the total size of a directory.
-       - Adds sizes of files and subdirectories.
-       - Skips symlinks, virtual filesystems, and already visited inodes.
-       - Updates `dir_sizes` in a thread-safe manner.
+    - Recursively computes the total size of a directory.
+    - Adds sizes of files and subdirectories.
+    - Skips symlinks, virtual filesystems, and already visited inodes.
+    - Updates `dir_sizes` in a thread-safe manner.
     */
     uint64_t computeDirSizes(const fs::path& dir);
 };

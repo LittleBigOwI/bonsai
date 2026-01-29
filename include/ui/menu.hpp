@@ -29,6 +29,14 @@ namespace fs = std::filesystem;
 
 class BonsaiMenu {
 public:
+    /* BonsaiMenuEntry
+    - Represents a single filesystem entry in the menu.
+    - Contains:
+      size   → folder size (0 for directories)
+      label  → display name in the menu
+      path   → absolute filesystem path
+      is_dir → whether entry is a directory
+    */
     struct BonsaiMenuEntry {
         std::uintmax_t size;
         std::string label;
@@ -37,20 +45,34 @@ public:
         bool is_dir;
     };
 
+    /* BonsaiMenuData
+    - Shared state between UI and worker thread.
+    - entries_mutex protects entries/labels updates.
+    - cv_mutex + condition variable coordinate worker sleeping/waking.
+    - path_changed signals directory navigation.
+    - stop signals worker termination.
+    */
     struct BonsaiMenuData {
-        std::mutex entries_mutex;
         std::shared_ptr<std::vector<BonsaiMenuEntry>> entries;
+        std::mutex entries_mutex;
+
         std::shared_ptr<std::vector<std::string>> labels;
         std::shared_ptr<std::string> path;
 
-        std::mutex cv_mutex;
         std::condition_variable cv;
+        std::mutex cv_mutex;
 
         bool path_changed = false;
         bool stop = false;
     };
 
-    static void worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, const fs::path& default_path);
     static Component menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, int* selected, const fs::path& default_path, MenuOption options);
+    static void worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, const fs::path& default_path);
+    
+    /* stop()
+    - Requests worker thread shutdown.
+    - Sets stop flag and wakes condition variable.
+    - Intended to be called during application exit.
+    */
     static void stop(std::shared_ptr<BonsaiMenuData> data);
 };
