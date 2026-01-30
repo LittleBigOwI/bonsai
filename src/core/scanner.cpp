@@ -98,3 +98,10 @@ void Scanner::stop() {
         this->done = true;
     }
 }
+
+bool Scanner::isDone() {
+    {
+        std::lock_guard lock(stop_mutex);
+        return this->done;
+    }
+}

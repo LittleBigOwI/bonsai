@@ -24,6 +24,7 @@ public:
 
     void scan();
     void stop();
+    bool isDone();
 
     uint64_t get(const fs::path& path);
     

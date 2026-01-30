@@ -14,11 +14,11 @@ int main() {
 
     Config config = Config::get();
 
+    auto screen = ScreenInteractive::Fullscreen();
+
     // Launch scanner
     Scanner scanner = Scanner(DEFAULT_PATH);
     std::thread scanner_thread([&scanner]() { scanner.scan(); });
-
-    auto screen = ScreenInteractive::Fullscreen();
 
     // Init shared menu & pie data
     int selected = 0;
@@ -37,7 +37,7 @@ int main() {
     auto menu_component = BonsaiMenu::menu(&screen, data, &selected, DEFAULT_PATH, option);
     auto menu_container = Container::Vertical({menu_component});
 
-    std::thread menu_thread(BonsaiMenu::worker, &screen, data, DEFAULT_PATH);
+    std::thread menu_thread(BonsaiMenu::worker, &screen, data, &scanner, DEFAULT_PATH);
 
     // Init main UI
     auto window = Renderer(menu_container, [&] {

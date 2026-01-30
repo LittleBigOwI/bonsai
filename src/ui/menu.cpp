@@ -3,7 +3,7 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
-void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, const fs::path& default_path) {
+void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, Scanner* scanner, const fs::path& default_path) {
     while (true) {
         std::vector<BonsaiMenuEntry> new_entries;
         std::vector<std::string> new_labels;
@@ -29,7 +29,7 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
                     item.size = entry.file_size(ec);
                     if (ec) item.size = 0;
                 } else {
-                    item.size = 0;
+                    item.size = scanner->get(entry.path());
                 }
 
                 unsorted_entries.push_back(std::move(item));
@@ -69,12 +69,17 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
         screen->PostEvent(Event::Custom);
 
         {
-            // Sleep until woken up
             std::unique_lock<std::mutex> lock(data->cv_mutex);
-            data->cv.wait(lock, [&]{ return data->path_changed || data->stop; });
-            if (data->stop) break;
-            
-            data->path_changed = false;
+
+            data->cv.wait_for(lock, std::chrono::milliseconds(100), [&] {
+                return data->path_changed || data->stop || scanner->isDone();
+            });
+
+            if (data->stop)
+                break;
+
+            if (data->path_changed)
+                data->path_changed = false;
         }
     }
 }

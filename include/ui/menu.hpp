@@ -19,6 +19,8 @@ Note that directory sizes aren't computed (scanner's job)
 
 #pragma once
 
+#include "../../include/core/scanner.hpp"
+
 #include <ftxui/component/screen_interactive.hpp>
 #include <ftxui/component/component.hpp>
 #include <filesystem>
@@ -67,7 +69,7 @@ public:
     };
 
     static Component menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, int* selected, const fs::path& default_path, MenuOption options);
-    static void worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, const fs::path& default_path);
+    static void worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, Scanner* scanner, const fs::path& default_path);
     
     /* stop()
     - Requests worker thread shutdown.
