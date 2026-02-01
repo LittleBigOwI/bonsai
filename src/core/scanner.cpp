@@ -20,6 +20,9 @@ bool Scanner::isVirtualFs(const fs::path& path) {
         case 0x01021994:   // tmpfs
         case 0x19830326:   // cgroup
         case 0x65735546:   // fuse
+        case 0x6969:       // NFS
+        case 0xff534d42:   // CIFS / SMB
+        case 0x5346414F:   // AFS
             return true;
         default:
             return false;
