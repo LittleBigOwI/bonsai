@@ -4,8 +4,14 @@ project(bonsai)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(ftxui REQUIRED)
+include(FetchContent)
 
+FetchContent_Declare(
+  ftxui
+  GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui.git
+  GIT_TAG v6.1.9
+)
+FetchContent_MakeAvailable(ftxui)
 
 set(SRC
     src/main.cpp
