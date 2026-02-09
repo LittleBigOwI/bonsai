@@ -9,7 +9,7 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
         std::vector<std::string> new_labels;
 
         // Always allow going back until DEFAULT_PATH is reached
-        if (*data->path != default_path) {
+        if (!fs::equivalent(*data->path, default_path)) {
             new_labels.push_back("..");
             new_entries.push_back(BonsaiMenuEntry{0, "..", "", true});
         }
@@ -65,7 +65,7 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
             data->labels->swap(new_labels);
         }
 
-        // Update render
+        // Update render and sleep if scan is finished or new path
         screen->PostEvent(Event::Custom);
 
         {

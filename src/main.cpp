@@ -7,17 +7,22 @@
 #include <iostream>
 #include <thread>
 
-#define DEFAULT_PATH "/"
+namespace fs = std::filesystem;
 
-int main() {
+int main(int argc, char* argv[]) {
     using namespace ftxui;
 
-    Config config = Config::get();
-
+    auto config = Config::get();
     auto screen = ScreenInteractive::Fullscreen();
+    auto default_path = argc == 1 ? fs::current_path() : argv[1];
+
+    if(!fs::exists(default_path)) {
+        std::cerr << "Error: Path does not exist: " << default_path << std::endl;
+        return 1;
+    }
 
     // Launch scanner
-    Scanner scanner = Scanner(DEFAULT_PATH);
+    Scanner scanner = Scanner(default_path);
     std::thread scanner_thread([&scanner]() { scanner.scan(); });
 
     // Init shared menu & pie data
@@ -26,7 +31,7 @@ int main() {
     
     data->entries = std::make_shared<std::vector<BonsaiMenu::BonsaiMenuEntry>>();
     data->labels = std::make_shared<std::vector<std::string>>();
-    data->path = std::make_shared<std::string>(DEFAULT_PATH);
+    data->path = std::make_shared<std::string>(default_path);
 
     MenuOption option;
 
@@ -34,10 +39,10 @@ int main() {
     - Use a container to keep focus through the entire render.
       If a menu component is embeded in a slew of elements, it becomes static
     */
-    auto menu_component = BonsaiMenu::menu(&screen, data, &selected, DEFAULT_PATH, option);
+    auto menu_component = BonsaiMenu::menu(&screen, data, &selected, default_path, option);
     auto menu_container = Container::Vertical({menu_component});
 
-    std::thread menu_thread(BonsaiMenu::worker, &screen, data, &scanner, DEFAULT_PATH);
+    std::thread menu_thread(BonsaiMenu::worker, &screen, data, &scanner, default_path);
 
     // Init main UI
     auto window = Renderer(menu_container, [&] {
