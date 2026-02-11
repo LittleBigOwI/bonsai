@@ -1,4 +1,5 @@
 #include "../include/config/config.hpp"
+#include "../include/core/app_data.hpp"
 #include "../include/core/scanner.hpp"
 #include "../include/ui/menu.hpp"
 
@@ -21,32 +22,36 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+
     // Launch scanner
     Scanner scanner = Scanner(default_path);
     std::thread scanner_thread([&scanner]() { scanner.scan(); });
 
+
     // Init shared menu & pie data
     int selected = 0;
-    auto data = std::make_shared<BonsaiMenu::BonsaiMenuData>();
+    auto data = std::make_shared<AppData::BonsaiData>();
     
-    data->entries = std::make_shared<std::vector<BonsaiMenu::BonsaiMenuEntry>>();
-    data->labels = std::make_shared<std::vector<std::string>>();
+    data->menu_entries = std::make_shared<std::vector<AppData::BonsaiMenuEntry>>();
+    data->menu_labels = std::make_shared<std::vector<std::string>>();
     data->path = std::make_shared<std::string>(default_path);
 
-    MenuOption option;
 
     /* Init menu:
     - Use a container to keep focus through the entire render.
       If a menu component is embeded in a slew of elements, it becomes static
     */
+    MenuOption option;
+
     auto menu_component = BonsaiMenu::menu(&screen, data, &selected, default_path, option);
     auto menu_container = Container::Vertical({menu_component});
 
     std::thread menu_thread(BonsaiMenu::worker, &screen, data, &scanner, default_path);
 
+
     // Init main UI
     auto window = Renderer(menu_container, [&] {
-        std::lock_guard<std::mutex> lock(data->entries_mutex);
+        std::lock_guard<std::mutex> lock(data->menu_mutex);
         
         return hbox({
             vbox({
@@ -62,9 +67,12 @@ int main(int argc, char* argv[]) {
         });
     });
 
+
     // Render UI
     screen.Loop(window);
     
+
+    // Stop app
     scanner.stop();
     scanner_thread.join();
 

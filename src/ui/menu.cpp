@@ -3,23 +3,23 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
-void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, Scanner* scanner, const fs::path& default_path) {
+void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
     while (true) {
-        std::vector<BonsaiMenuEntry> new_entries;
+        std::vector<AppData::BonsaiMenuEntry> new_entries;
         std::vector<std::string> new_labels;
 
         // Always allow going back until DEFAULT_PATH is reached
         if (!fs::equivalent(*data->path, default_path)) {
             new_labels.push_back("..");
-            new_entries.push_back(BonsaiMenuEntry{0, "..", "", true});
+            new_entries.push_back(AppData::BonsaiMenuEntry{0, "..", "", true});
         }
 
         try {
-            std::vector<BonsaiMenuEntry> unsorted_entries;
+            std::vector<AppData::BonsaiMenuEntry> unsorted_entries;
 
             // Parse current path and get relevant data (size, is_dir, path, etc.)
             for (const auto& entry : fs::directory_iterator(*data->path)) {
-                BonsaiMenuEntry item;
+                AppData::BonsaiMenuEntry item;
                 item.path = entry.path().string();
                 item.label = entry.path().filename().string();
                 item.is_dir = entry.is_directory();
@@ -40,7 +40,7 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
             - Then compare size descending
             - Then compare name ascending
             */
-            std::sort(unsorted_entries.begin(), unsorted_entries.end(), [](const BonsaiMenuEntry& a, const BonsaiMenuEntry& b) {
+            std::sort(unsorted_entries.begin(), unsorted_entries.end(), [](const AppData::BonsaiMenuEntry& a, const AppData::BonsaiMenuEntry& b) {
                 if (a.is_dir != b.is_dir)
                     return a.is_dir;
 
@@ -60,9 +60,9 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
 
         {
             // Update the menu data
-            std::lock_guard<std::mutex> lock(data->entries_mutex);
-            data->entries->swap(new_entries);
-            data->labels->swap(new_labels);
+            std::lock_guard<std::mutex> lock(data->menu_mutex);
+            data->menu_entries->swap(new_entries);
+            data->menu_labels->swap(new_labels);
         }
 
         // Update render and sleep if scan is finished or new path
@@ -72,19 +72,19 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuDat
             std::unique_lock<std::mutex> lock(data->cv_mutex);
 
             data->cv.wait_for(lock, std::chrono::milliseconds(100), [&] {
-                return data->path_changed || data->stop || scanner->isDone();
+                return data->menu_path_changed || data->stop || scanner->isDone();
             });
 
             if (data->stop)
                 break;
 
-            if (data->path_changed)
-                data->path_changed = false;
+            if (data->menu_path_changed)
+                data->menu_path_changed = false;
         }
     }
 }
 
-Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenuData> data, int* selected, const fs::path& default_path, MenuOption options) {
+Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, int* selected, const fs::path& default_path, MenuOption options) {
 
     // Selected or unselected colors
     options.entries_option.animated_colors.foreground = AnimatedColorOption{
@@ -94,7 +94,7 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenu
 
     // Plot the entry data on the menu in a nice way
     options.entries_option.transform = [data](const EntryState& entry_state) {
-        const auto& item = (*data->entries)[entry_state.index];
+        const auto& item = (*data->menu_entries)[entry_state.index];
         const bool is_selected = entry_state.active;
         const Config& config = Config::get();
 
@@ -120,12 +120,12 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenu
     options.on_enter = [data, selected]() {
         std::string new_path;
         {
-            std::lock_guard<std::mutex> lock(data->entries_mutex);
-            if (*selected < 0 || *selected >= (int)data->entries->size() || !(*data->entries)[*selected].is_dir) return;
-            new_path = (*data->entries)[*selected].path;
+            std::lock_guard<std::mutex> lock(data->menu_mutex);
+            if (*selected < 0 || *selected >= (int)data->menu_entries->size() || !(*data->menu_entries)[*selected].is_dir) return;
+            new_path = (*data->menu_entries)[*selected].path;
 
             // For ".." go up
-            if ((*data->entries)[*selected].label == "..") {
+            if ((*data->menu_entries)[*selected].label == "..") {
                 std::filesystem::path p(*data->path);
                 new_path = p.parent_path().string();
             }
@@ -135,17 +135,17 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<BonsaiMenu
 
         {
             std::lock_guard<std::mutex> lock(data->cv_mutex);
-            data->path_changed = true;
+            data->menu_path_changed = true;
         }
 
         data->cv.notify_one();
     };
 
     // Menu is updated as labels update
-    return Menu(data->labels.get(), selected, options);
+    return Menu(data->menu_labels.get(), selected, options);
 }
 
-void BonsaiMenu::stop(std::shared_ptr<BonsaiMenuData> data) {
+void BonsaiMenu::stop(std::shared_ptr<AppData::BonsaiData> data) {
     {
         std::lock_guard<std::mutex> lock(data->cv_mutex);
         data->stop = true;
