@@ -34,11 +34,4 @@ class BonsaiMenu {
 public:
     static Component menu(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, int* selected, const fs::path& default_path, MenuOption options);
     static void worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path);
-    
-    /* stop()
-    - Requests worker thread shutdown.
-    - Sets stop flag and wakes condition variable.
-    - Intended to be called during application exit.
-    */
-    static void stop(std::shared_ptr<AppData::BonsaiData> data);
 };

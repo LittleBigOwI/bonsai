@@ -1,6 +1,7 @@
 #include "../include/config/config.hpp"
 #include "../include/core/app_data.hpp"
 #include "../include/core/scanner.hpp"
+#include "../include/ui/piechart.hpp"
 #include "../include/ui/menu.hpp"
 
 #include <ftxui/component/screen_interactive.hpp>
@@ -48,11 +49,20 @@ int main(int argc, char* argv[]) {
 
     std::thread menu_thread(BonsaiMenu::worker, &screen, data, &scanner, default_path);
 
+    
+    /* Init pie:
+    - No need for a containter this time, as the component isn't interactive
+    */
+    data->pie_entries = std::make_shared<std::vector<AppData::BonsaiPieEntry>>();
+    auto pie_component = BonsaiPie::pie(data);
+    
+    std::thread pie_thread(BonsaiPie::worker, &screen, data, &scanner, default_path);
 
     // Init main UI
     auto window = Renderer(menu_container, [&] {
-        std::lock_guard<std::mutex> lock(data->menu_mutex);
-        
+        std::lock_guard<std::mutex> lock_m(data->menu_mutex);
+        std::lock_guard<std::mutex> lock_p(data->pie_mutex);
+    
         return hbox({
             vbox({
                 text(" "),
@@ -64,6 +74,7 @@ int main(int argc, char* argv[]) {
                 })
             }),
             separator(),
+            pie_component->Render()
         });
     });
 
@@ -73,11 +84,13 @@ int main(int argc, char* argv[]) {
     
 
     // Stop app
+    AppData::stop(data);
+
+    menu_thread.join();
+    pie_thread.join();
+
     scanner.stop();
     scanner_thread.join();
-
-    BonsaiMenu::stop(data);
-    menu_thread.join();
 
     return 0;
 }

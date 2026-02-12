@@ -16,9 +16,11 @@ FetchContent_MakeAvailable(ftxui)
 set(SRC
     src/main.cpp
     
+    src/core/app_data.cpp
     src/core/scanner.cpp
 
     src/ui/menu.cpp
+    src/ui/piechart.cpp
 )
 
 # Embed default config

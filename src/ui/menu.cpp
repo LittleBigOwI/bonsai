@@ -136,19 +136,12 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
         {
             std::lock_guard<std::mutex> lock(data->cv_mutex);
             data->menu_path_changed = true;
+            data->pie_path_changed = true;
         }
 
-        data->cv.notify_one();
+        data->cv.notify_all();
     };
 
     // Menu is updated as labels update
     return Menu(data->menu_labels.get(), selected, options);
-}
-
-void BonsaiMenu::stop(std::shared_ptr<AppData::BonsaiData> data) {
-    {
-        std::lock_guard<std::mutex> lock(data->cv_mutex);
-        data->stop = true;
-    }
-    data->cv.notify_one();
 }

@@ -47,8 +47,8 @@ public:
         std::shared_ptr<std::vector<BonsaiMenuEntry>> menu_entries;
         std::shared_ptr<std::vector<std::string>> menu_labels;
 
-        // std::mutex pie_mutex;
-        // std::shared_ptr<std::vector<BonsaiPieEntry>> pie_entries;
+        std::mutex pie_mutex;
+        std::shared_ptr<std::vector<BonsaiPieEntry>> pie_entries;
 
         std::shared_ptr<std::string> path;
 
@@ -56,7 +56,14 @@ public:
         std::condition_variable cv;
 
         bool menu_path_changed = false;
-        // bool pie_path_changed = false;
+        bool pie_path_changed = false;
         bool stop = false;
     };
+
+    /* stop()
+    - Sets done flag to true.
+    - Any thread created will a data struct is watching that flag.
+    - Intended to be called during application exit.
+    */
+    static void stop(std::shared_ptr<AppData::BonsaiData> data);
 };
