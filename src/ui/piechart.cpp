@@ -1,6 +1,8 @@
 #include "../../include/ui/piechart.hpp"
 
+#include <iostream>
 #include <cmath>
+#include <map>
 
 void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer& s) {
     const int steps = 360;
@@ -42,7 +44,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
                 if (ec) { ec.clear(); continue; }
 
                 // Limit depth
-                if (it.depth() > 3) {
+                if (it.depth() > 1) {
                     it.disable_recursion_pending();
                     continue;
                 }
@@ -54,40 +56,77 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         }
 
         /* What we have to do here:
-        - recuperate current directory size with scanner map
-        - recuperate all depth scanned directory sizes
+        - recuperate current directory size with scanner map with: scanner->get(data->path) and std::lock_guard<std::mutex> lock(data->menu_mutex);
+        - recuperate all depth scanned directory sizes with: scanned_dirs for each scanner->get(scanned_dir)
         - for each "depth" of directory
-          get get sizes of dirs in that depth
+          get get sizes of dirs in that depth (already done)
           get their percentage of use of the current dir
-          get the angle that corresponds to that percentage (we could just compute the angle straight away)
+          get the angle that corresponds to that percentage (we could just compute the angle straight away) 100% is 360 deg ofc.
         - each depth of directory corresponds to one ring on the canvas
-        - inner ring is the closest depth
+        - inner ring is the closest depth to current dir
         - outer rings are the further depths
-        - sort the scanned dirs by depth and by size descending
-        - for each computed angle, draw a part of the final pie chart of that angle
+        - sort the scanned dirs by depth then by size descending
         - inner rings decide color
         - outer rings dim color of parent directory
+        - for each computed angle, compute a part of the final pie chart of that angle with void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer& s);
+        - add all results in a vector of BonsaiPieEntry
         - goal is to match the baobab piechart
         */
 
-        passes++;
-        if (data->pie_entries->empty()) {
-            data->pie_entries->push_back(AppData::BonsaiPieEntry{"", Color::Black, 0, 0, 0, 0});
+        std::vector<AppData::BonsaiPieEntry> entries;
+
+        uint64_t root_size = 0;
+        {
+            std::lock_guard<std::mutex> lock(data->menu_mutex);
+            root_size = scanner->get(*data->path);
         }
 
-        if(passes % 2 == 0) {
-            (*data->pie_entries)[0].label = "true";
-        } else {
-            (*data->pie_entries)[0].label = "false";
+        int usr_index = 0;
+        for(int i = 0; i < scanned_dirs.size(); i++) {
+            if(scanned_dirs[i] == "/home") {
+                usr_index = i;
+            }
+        }        
+
+        Color slice_color = Color::Red1;
+        uint64_t first_dir_size = scanner->get(scanned_dirs[usr_index]); 
+        int occupancy = first_dir_size * 100 / root_size;
+        int sweep = occupancy * 360 / 100;
+        
+        AppData::BonsaiPieEntry entry;
+        entry.color = slice_color;
+        entry.inner_radius = 15;
+        entry.outer_radius = 30;
+        entry.label = scanned_dirs[usr_index];
+        entry.offset_angle = 0;
+        entry.sweep = sweep;
+
+        entries.push_back(entry);
+
+        // Publish results
+        {
+            std::lock_guard<std::mutex> lock(data->pie_mutex);
+            *data->pie_entries = std::move(entries);
+        }
+
+        // Sleep until woken up or keep going if scanner hasn't completed
+        if(!scanner->isDone()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
         }
 
         {
-            // Sleep until woken up
-            std::unique_lock<std::mutex> lock(data->cv_mutex);
-            data->cv.wait(lock, [&]{ return data->pie_path_changed || data->stop; });
+            std::unique_lock<std::mutex> lock(data->pie_mutex);
 
-            if (data->stop) break;
-            data->pie_path_changed = false;
+            data->cv.wait(lock, [&] {
+                return data->pie_path_changed || data->stop;
+            });
+
+            if (data->stop)
+                break;
+
+            if (data->pie_path_changed)
+                data->pie_path_changed = false;
         }
     }
 }
@@ -98,19 +137,23 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data) {
             int w = c.width();
             int h = c.height();
 
-            for (AppData::BonsaiPieEntry entry : (*data->pie_entries)) {
-                // draw_angled_block_ellipse_ring_offset(
-                //     c,
-                //     w / 2,
-                //     h / 2,
-                //     si.outer_radius,
-                //     si.outer_radius,
-                //     si.inner_radius,
-                //     si.offset_angle,
-                //     si.sweep,
-                //     [si](ftxui::Pixel &p){ p.foreground_color = si.color; }
-                // );
-                c.DrawText(w/2, h/2, entry.label);
+            {
+                std::lock_guard<std::mutex> lock(data->pie_mutex);
+                
+                for (AppData::BonsaiPieEntry entry : (*data->pie_entries)) {
+                    BonsaiPie::drawAngledBlockEllipseRingOffset(
+                        c,
+                        w / 2,
+                        h / 2,
+                        entry.outer_radius,
+                        entry.outer_radius,
+                        entry.inner_radius,
+                        entry.offset_angle,
+                        entry.sweep,
+                        [entry](ftxui::Pixel &p){ p.foreground_color = entry.color; }
+                    );
+                    c.DrawText(w/2, h/2, entry.label);
+                }
             }
 
         }) | flex;

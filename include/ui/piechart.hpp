@@ -16,5 +16,13 @@ public:
     static void stop(std::shared_ptr<AppData::BonsaiData> data);
 
 private:
+    struct EntryInfo {
+        std::filesystem::path path;
+        uint64_t size;
+        
+        bool is_dir;
+        int depth;
+    };
+
     static void drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer& s);
 };

@@ -90,6 +90,10 @@ uint64_t Scanner::get(const fs::path& path) {
 
 void Scanner::scan() {
     computeDirSizes(this->path);
+    {
+        std::lock_guard lock(stop_mutex);
+        this->done = true;
+    }
 }
 
 void Scanner::stop() {

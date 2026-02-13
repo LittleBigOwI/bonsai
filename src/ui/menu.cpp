@@ -68,11 +68,17 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bons
         // Update render and sleep if scan is finished or new path
         screen->PostEvent(Event::Custom);
 
+        // Sleep until woken up or keep going until scanner has completed
+        if(!scanner->isDone()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            continue;
+        }
+
         {
             std::unique_lock<std::mutex> lock(data->cv_mutex);
 
-            data->cv.wait_for(lock, std::chrono::milliseconds(100), [&] {
-                return data->menu_path_changed || data->stop || scanner->isDone();
+            data->cv.wait(lock, [&] {
+                return data->menu_path_changed || data->stop;
             });
 
             if (data->stop)
