@@ -8,8 +8,14 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bons
         std::vector<AppData::BonsaiMenuEntry> new_entries;
         std::vector<std::string> new_labels;
 
+        fs::path current_path;
+        {
+            std::lock_guard<std::mutex> lock(data->menu_mutex);
+            current_path = *data->path;
+        }
+
         // Always allow going back until DEFAULT_PATH is reached
-        if (!fs::equivalent(*data->path, default_path)) {
+        if (!fs::equivalent(current_path, default_path)) {
             new_labels.push_back("..");
             new_entries.push_back(AppData::BonsaiMenuEntry{0, "..", "", true});
         }
@@ -18,7 +24,7 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bons
             std::vector<AppData::BonsaiMenuEntry> unsorted_entries;
 
             // Parse current path and get relevant data (size, is_dir, path, etc.)
-            for (const auto& entry : fs::directory_iterator(*data->path)) {
+            for (const auto& entry : fs::directory_iterator(current_path)) {
                 AppData::BonsaiMenuEntry item;
                 item.path = entry.path().string();
                 item.label = entry.path().filename().string();
@@ -123,7 +129,7 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
     };
 
     // On selected: update data with a new path, and wake worker thread
-    options.on_enter = [data, selected]() {
+    options.on_enter = [screen, data, selected]() {
         std::string new_path;
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);

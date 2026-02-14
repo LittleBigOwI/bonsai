@@ -23,6 +23,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    if(!fs::is_directory(default_path)) {
+        std::cerr << "Error: Path isn't a directory: " << default_path << std::endl;
+        return 1;
+    }
+
 
     // Launch scanner
     Scanner scanner = Scanner(default_path);
@@ -84,13 +89,22 @@ int main(int argc, char* argv[]) {
     
 
     // Stop app
+    scanner.stop();
     AppData::stop(data);
 
+    scanner_thread.join();
     menu_thread.join();
     pie_thread.join();
 
-    scanner.stop();
-    scanner_thread.join();
-
     return 0;
 }
+
+/* TODO: bug
+-> scanner isn't finished.
+-> menu scans for a folder, and updates sizes in list
+-> this updates render, that updates piechart.
+-> piechart worker doesn't wake up
+-> for some reason percentages are updated but folder list isn't?
+
+-> Maybe fixable with callback on scan completed (update render) since this only happens when scanner is done
+*/

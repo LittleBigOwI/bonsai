@@ -1,113 +1,168 @@
+#include "../../include/config/config.hpp"
 #include "../../include/ui/piechart.hpp"
 
 #include <iostream>
 #include <cmath>
 #include <map>
 
-void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer& s) {
-    const int steps = 360;
+void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer &s) {
+    int x = -r1;
+    int y = 0;
+    int e2 = r2;
+    int dx = (1 + 2 * x) * e2 * e2;
+    int dy = x * x;
+    int err = dx + dy;
 
-    double start_rad = starting_angle * M_PI / 180.0;
-    double max_rad = angle * M_PI / 180.0;
+    double start_angle_rad = starting_angle * M_PI / 180.0;
+    double max_angle_rad = angle * M_PI / 180.0;
+    int r3_squared = r3 * r3;
 
-    for (int i = 0; i <= steps; ++i) {
-        double theta = (double)i / steps * max_rad + start_rad;
+    auto within_angular_ring = [&](int dx, int dy)
+    {
+        double angle_rad = atan2(dy * r1, dx * r2);
+        if (angle_rad < 0)
+            angle_rad += 2 * M_PI;
 
-        double cos_theta = std::cos(theta);
-        double sin_theta = std::sin(theta);
+        double rel_angle = angle_rad - start_angle_rad;
+        if (rel_angle < 0)
+            rel_angle += 2 * M_PI;
 
-        int max_radius = std::max(r1, r2);
-        for (double t = static_cast<double>(r3) / std::min(r1, r2); t <= 1.0; t += 0.009) {
-            int dx = static_cast<int>(std::round(r1 * t * cos_theta));
-            int dy = static_cast<int>(std::round(r2 * t * sin_theta));
+        if (rel_angle > max_angle_rad)
+            return false;
 
-            c.DrawBlock(x1 + dx, y1 + dy, true, s);
+        double norm_x = static_cast<double>(dx) / r1;
+        double norm_y = static_cast<double>(dy) / r2;
+        double distance_squared = norm_x * norm_x + norm_y * norm_y;
+
+        double inner_radius_ratio = static_cast<double>(r3) / std::min(r1, r2);
+        return distance_squared >= inner_radius_ratio * inner_radius_ratio;
+    };
+
+    do
+    {
+        for (int xx = x1 + x; xx <= x1 - x; ++xx)
+        {
+            int dx = xx - x1;
+            if (within_angular_ring(dx, y))
+                c.DrawBlock(xx, y1 + y, true, s);
+            if (within_angular_ring(dx, -y))
+                c.DrawBlock(xx, y1 - y, true, s);
         }
+
+        e2 = 2 * err;
+        if (e2 >= dx)
+        {
+            x++;
+            err += dx += 2 * r2 * r2;
+        }
+        if (e2 <= dy)
+        {
+            y++;
+            err += dy += 2 * r1 * r1;
+        }
+    } while (x <= 0);
+
+    while (y++ < r2)
+    {
+        if (within_angular_ring(0, y))
+            c.DrawBlock(x1, y1 + y, true, s);
+        if (within_angular_ring(0, -y))
+            c.DrawBlock(x1, y1 - y, true, s);
     }
+}
+
+void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entries, int current_depth, int max_depth, Scanner* scanner) {
+    if (current_depth > max_depth) return;
+
+    try {
+        for (const auto& entry : fs::directory_iterator(dir)) {
+            EntryInfo info;
+            info.path = entry.path();
+            info.is_dir = entry.is_directory();
+            info.depth = current_depth;
+
+            if (info.is_dir) {
+                info.size = scanner->get(entry.path());
+                entries.push_back(info);
+                collectEntries(entry.path(), entries, current_depth + 1, max_depth, scanner);
+            
+            } else if (entry.is_regular_file()) {
+                info.size = entry.file_size();
+                entries.push_back(info);
+            }
+        }
+    } catch (std::filesystem::filesystem_error e) {}
 }
 
 void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
     int passes = 0;
     while (true) {
-        std::vector<std::filesystem::path> scanned_dirs;
+        std::vector<EntryInfo> entries;
 
-        // Perform a single recursive scan (only directories)
-        std::error_code ec;
-        std::filesystem::recursive_directory_iterator it(
-            *data->path,
-            std::filesystem::directory_options::skip_permission_denied,
-            ec
-        );
+        fs::path current_path;
 
-        if (!ec) {
-            for (; it != std::filesystem::recursive_directory_iterator(); it.increment(ec)) {
-                if (ec) { ec.clear(); continue; }
-
-                // Limit depth
-                if (it.depth() > 1) {
-                    it.disable_recursion_pending();
-                    continue;
-                }
-
-                if (it->is_directory(ec) && !ec) {
-                    scanned_dirs.push_back(it->path());
-                }
-            }
-        }
-
-        /* What we have to do here:
-        - recuperate current directory size with scanner map with: scanner->get(data->path) and std::lock_guard<std::mutex> lock(data->menu_mutex);
-        - recuperate all depth scanned directory sizes with: scanned_dirs for each scanner->get(scanned_dir)
-        - for each "depth" of directory
-          get get sizes of dirs in that depth (already done)
-          get their percentage of use of the current dir
-          get the angle that corresponds to that percentage (we could just compute the angle straight away) 100% is 360 deg ofc.
-        - each depth of directory corresponds to one ring on the canvas
-        - inner ring is the closest depth to current dir
-        - outer rings are the further depths
-        - sort the scanned dirs by depth then by size descending
-        - inner rings decide color
-        - outer rings dim color of parent directory
-        - for each computed angle, compute a part of the final pie chart of that angle with void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer& s);
-        - add all results in a vector of BonsaiPieEntry
-        - goal is to match the baobab piechart
-        */
-
-        std::vector<AppData::BonsaiPieEntry> entries;
-
-        uint64_t root_size = 0;
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
-            root_size = scanner->get(*data->path);
+            current_path = *data->path;
         }
 
-        int usr_index = 0;
-        for(int i = 0; i < scanned_dirs.size(); i++) {
-            if(scanned_dirs[i] == "/home") {
-                usr_index = i;
+
+        // Parse current path with a max depth of 3
+        collectEntries(current_path, entries, 0, 3, scanner);
+
+        /*
+        */
+        std::sort(entries.begin(), entries.end(), [](const EntryInfo& a, const EntryInfo& b) {
+            if (a.depth != b.depth)
+                return a.depth < b.depth;
+            if (a.is_dir != b.is_dir)
+                return a.is_dir > b.is_dir;
+            return a.size > b.size;
+        });
+
+        std::vector<AppData::BonsaiPieEntry> slices;
+
+        uint64_t root_size = scanner->get(current_path);
+        Config cfg = Config::get();
+
+        int i = 0;
+        int offset = 0;
+        for(auto& entry : entries) {
+            if(entry.depth != 0 || root_size <= 0) {
+                continue;
             }
-        }        
 
-        Color slice_color = Color::Red1;
-        uint64_t first_dir_size = scanner->get(scanned_dirs[usr_index]); 
-        int occupancy = first_dir_size * 100 / root_size;
-        int sweep = occupancy * 360 / 100;
-        
-        AppData::BonsaiPieEntry entry;
-        entry.color = slice_color;
-        entry.inner_radius = 15;
-        entry.outer_radius = 30;
-        entry.label = scanned_dirs[usr_index];
-        entry.offset_angle = 0;
-        entry.sweep = sweep;
+            int occupancy = entry.size * 100 / root_size;
+            int sweep = occupancy * 360 / 100;
 
-        entries.push_back(entry);
+            if(occupancy < cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) {
+                continue;
+            }
+
+            std::array<int, 3UL> color = cfg.CHART_COLORS[i % cfg.CHART_COLORS.size()];
+
+            AppData::BonsaiPieEntry slice;
+            slice.color = Color::RGB(color[0], color[1], color[2]);
+            slice.inner_radius = 15;
+            slice.outer_radius = 30;
+            slice.label = "";
+            slice.offset_angle = offset;
+            slice.sweep = sweep;
+
+            slices.push_back(slice);
+
+            offset += sweep;
+            i++;
+        }
 
         // Publish results
         {
             std::lock_guard<std::mutex> lock(data->pie_mutex);
-            *data->pie_entries = std::move(entries);
+            *data->pie_entries = std::move(slices);
         }
+
+        // Update render
+        screen->PostEvent(Event::Custom);
 
         // Sleep until woken up or keep going if scanner hasn't completed
         if(!scanner->isDone()) {
@@ -137,23 +192,25 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data) {
             int w = c.width();
             int h = c.height();
 
+            std::vector<AppData::BonsaiPieEntry> entries;
             {
                 std::lock_guard<std::mutex> lock(data->pie_mutex);
-                
-                for (AppData::BonsaiPieEntry entry : (*data->pie_entries)) {
-                    BonsaiPie::drawAngledBlockEllipseRingOffset(
-                        c,
-                        w / 2,
-                        h / 2,
-                        entry.outer_radius,
-                        entry.outer_radius,
-                        entry.inner_radius,
-                        entry.offset_angle,
-                        entry.sweep,
-                        [entry](ftxui::Pixel &p){ p.foreground_color = entry.color; }
-                    );
-                    c.DrawText(w/2, h/2, entry.label);
-                }
+                entries = *data->pie_entries;
+            }
+
+            for (AppData::BonsaiPieEntry entry : entries) {
+                BonsaiPie::drawAngledBlockEllipseRingOffset(
+                    c,
+                    w / 2,
+                    h / 2,
+                    entry.outer_radius,
+                    entry.outer_radius,
+                    entry.inner_radius,
+                    entry.offset_angle,
+                    entry.sweep,
+                    [entry](ftxui::Pixel &p){ p.foreground_color = entry.color; }
+                );
+                c.DrawText(w/2, h/2, entry.label);
             }
 
         }) | flex;
