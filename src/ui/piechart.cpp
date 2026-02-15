@@ -96,21 +96,25 @@ void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entr
 
 void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
     int passes = 0;
+    
     while (true) {
         std::vector<EntryInfo> entries;
 
         fs::path current_path;
-
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
             current_path = *data->path;
         }
 
-
         // Parse current path with a max depth of 3
         collectEntries(current_path, entries, 0, 3, scanner);
 
-        /*
+        /* Sort:
+        - Depth first: lower depth is higer priority
+        - Type second: directories have a higher priority over files
+        - Size third: larger sizes have a higher priority over lower ones
+        
+        - Maybe we could use a priority queue here? idk.
         */
         std::sort(entries.begin(), entries.end(), [](const EntryInfo& a, const EntryInfo& b) {
             if (a.depth != b.depth)
@@ -122,6 +126,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
 
         std::vector<AppData::BonsaiPieEntry> slices;
 
+        // Get size of current dir
         uint64_t root_size = scanner->get(current_path);
         Config cfg = Config::get();
 
@@ -164,11 +169,22 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         // Update render
         screen->PostEvent(Event::Custom);
 
+        /* Bug fix:
+        - On first render the pie will be updated with new size but not new folders
+        - Probably caused by a desync between menu and pie threads? idk.
+        - This forces a single extra pass/iteration (recompute everything on the first scan complete)
+        */
+        if(passes == 0 && scanner->isDone()) {
+            passes++;
+            continue;
+        }
+
         // Sleep until woken up or keep going if scanner hasn't completed
         if(!scanner->isDone()) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
+
 
         {
             std::unique_lock<std::mutex> lock(data->pie_mutex);

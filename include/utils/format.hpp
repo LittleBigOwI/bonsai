@@ -7,8 +7,7 @@
 
 class FormatUtils {
 public:
-    static std::string toReadable(uintmax_t bytes,
-                                  const std::string& spacer = " ") {
+    static std::string toReadable(uintmax_t bytes, const std::string& spacer = " ") {
         constexpr uintmax_t KB = 1024;
         constexpr uintmax_t MB = KB * 1024;
         constexpr uintmax_t GB = MB * 1024;

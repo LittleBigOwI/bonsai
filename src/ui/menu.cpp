@@ -14,7 +14,7 @@ void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bons
             current_path = *data->path;
         }
 
-        // Always allow going back until DEFAULT_PATH is reached
+        // Always allow going back until default_path is reached
         if (!fs::equivalent(current_path, default_path)) {
             new_labels.push_back("..");
             new_entries.push_back(AppData::BonsaiMenuEntry{0, "..", "", true});
@@ -146,6 +146,7 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
         }
 
         {
+            // Wake up both pie and menu on change
             std::lock_guard<std::mutex> lock(data->cv_mutex);
             data->menu_path_changed = true;
             data->pie_path_changed = true;
