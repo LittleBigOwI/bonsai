@@ -54,8 +54,7 @@ uint64_t Scanner::computeDirSizes(const fs::path& dir) {
 
     visited.insert(inode);
 
-    for (auto& entry :
-         fs::directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
+    for (auto& entry : fs::directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
         try {
             if (fs::is_symlink(entry.path()))
                 continue;

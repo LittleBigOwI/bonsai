@@ -76,6 +76,9 @@ void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entr
 
     try {
         for (const auto& entry : fs::directory_iterator(dir)) {
+            if (fs::is_symlink(entry.path()))
+                continue;
+
             EntryInfo info;
             info.path = entry.path();
             info.is_dir = entry.is_directory();
@@ -91,7 +94,7 @@ void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entr
                 entries.push_back(info);
             }
         }
-    } catch (std::filesystem::filesystem_error e) {}
+    } catch (const fs::filesystem_error&) {}
 }
 
 void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
@@ -131,11 +134,26 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         Config cfg = Config::get();
 
         int i = 0;
-        int offset = 0;
+
+        std::map<std::string, int> layer_offsets_per_parent;
+        std::map<std::string, int> slice_offsets;
+        
         for(auto& entry : entries) {
-            if(entry.depth != 0 || root_size <= 0) {
+            if(root_size <= 0) {
                 continue;
             }
+
+            if(entry.depth != 0 && entry.depth != 1) {
+                continue;
+            }
+
+            if(entry.size > root_size) {
+                continue;
+            }
+
+            int inner_hole_radius = 10;
+            int inner_radius = inner_hole_radius + ((entry.depth + 1) * 20);
+            int outer_radius = inner_radius + 20;
 
             int occupancy = entry.size * 100 / root_size;
             int sweep = occupancy * 360 / 100;
@@ -148,15 +166,23 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
 
             AppData::BonsaiPieEntry slice;
             slice.color = Color::RGB(color[0], color[1], color[2]);
-            slice.inner_radius = 15;
-            slice.outer_radius = 30;
+            slice.inner_radius = inner_radius;
+            slice.outer_radius = outer_radius;
             slice.label = "";
-            slice.offset_angle = offset;
             slice.sweep = sweep;
 
+            if(entry.depth == 0) {
+                slice.offset_angle = layer_offsets_per_parent["root"];
+                layer_offsets_per_parent["root"] += sweep;
+            } else {
+                std::string parent = entry.path.parent_path().string();
+                slice.offset_angle = slice_offsets[parent] + layer_offsets_per_parent[parent];
+                layer_offsets_per_parent[parent] += sweep;
+            }
+
+            slice_offsets[entry.path.string()] = slice.offset_angle;
             slices.push_back(slice);
 
-            offset += sweep;
             i++;
         }
 
