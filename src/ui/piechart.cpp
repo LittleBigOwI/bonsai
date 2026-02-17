@@ -5,70 +5,72 @@
 #include <cmath>
 #include <map>
 
-void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer &s) {
-    int x = -r1;
-    int y = 0;
-    int e2 = r2;
-    int dx = (1 + 2 * x) * e2 * e2;
-    int dy = x * x;
-    int err = dx + dy;
+void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int r1, int r2, int r_inner, double start_deg, double sweep_deg, const std::string& label, const Color& color) {
+    if (sweep_deg <= 0.0)
+        return;
 
-    double start_angle_rad = starting_angle * M_PI / 180.0;
-    double max_angle_rad = angle * M_PI / 180.0;
-    int r3_squared = r3 * r3;
-
-    auto within_angular_ring = [&](int dx, int dy)
-    {
-        double angle_rad = atan2(dy * r1, dx * r2);
-        if (angle_rad < 0)
-            angle_rad += 2 * M_PI;
-
-        double rel_angle = angle_rad - start_angle_rad;
-        if (rel_angle < 0)
-            rel_angle += 2 * M_PI;
-
-        if (rel_angle > max_angle_rad)
-            return false;
-
-        double norm_x = static_cast<double>(dx) / r1;
-        double norm_y = static_cast<double>(dy) / r2;
-        double distance_squared = norm_x * norm_x + norm_y * norm_y;
-
-        double inner_radius_ratio = static_cast<double>(r3) / std::min(r1, r2);
-        return distance_squared >= inner_radius_ratio * inner_radius_ratio;
-    };
-
-    do
-    {
-        for (int xx = x1 + x; xx <= x1 - x; ++xx)
-        {
-            int dx = xx - x1;
-            if (within_angular_ring(dx, y))
-                c.DrawBlock(xx, y1 + y, true, s);
-            if (within_angular_ring(dx, -y))
-                c.DrawBlock(xx, y1 - y, true, s);
-        }
-
-        e2 = 2 * err;
-        if (e2 >= dx)
-        {
-            x++;
-            err += dx += 2 * r2 * r2;
-        }
-        if (e2 <= dy)
-        {
-            y++;
-            err += dy += 2 * r1 * r1;
-        }
-    } while (x <= 0);
-
-    while (y++ < r2)
-    {
-        if (within_angular_ring(0, y))
-            c.DrawBlock(x1, y1 + y, true, s);
-        if (within_angular_ring(0, -y))
-            c.DrawBlock(x1, y1 - y, true, s);
+    int max_label_length = 5;
+    std::string display_label = label;
+    if (display_label.length() > max_label_length) {
+        display_label = display_label.substr(0, max_label_length - 2) + "..";
     }
+
+    const double start = start_deg * M_PI / 180.0;
+    const double end   = (start_deg + sweep_deg) * M_PI / 180.0;
+
+    /* Angle step — controls smoothness vs speed
+    - Smaller = smoother but slower
+    - 0.5deg is usually visually perfect in terminal
+    - Make it user adjustable? idk.
+    */
+    const double step = 0.5 * M_PI / 180.0;
+
+    double cos_a = std::cos(start);
+    double sin_a = std::sin(start);
+
+    // Precompute rotation delta (incremental rotation)
+    const double cos_d = std::cos(step);
+    const double sin_d = std::sin(step);
+
+    const int outer_r = std::max(r1, r2);
+
+    // Precompute mid-angle and mid-radius for text
+    const double mid_angle = start + (end - start) / 2.0;
+    const double mid_radius = r_inner + (outer_r - r_inner) / 2.0;
+    const int text_x = (static_cast<int>(cx + std::cos(mid_angle) * mid_radius) - static_cast<int>(display_label.size()) / 2);
+    const int text_y = static_cast<int>(cy + std::sin(mid_angle) * mid_radius);
+
+    for (double a = start; a < end; a += step) {
+        const double dx_outer = cos_a * r1;
+        const double dy_outer = sin_a * r2;
+
+        const double dx_inner = cos_a * r_inner;
+        const double dy_inner = sin_a * r_inner;
+
+        const double inv_len = 1.0 / outer_r;
+
+        for (int r = r_inner; r <= outer_r; ++r) {
+            double t = r * inv_len;
+
+            int px = static_cast<int>(cx + dx_outer * t);
+            int py = static_cast<int>(cy + dy_outer * t);
+
+            c.DrawBlock(px, py, true, [color](Pixel &p) {
+                p.foreground_color = color;
+            });
+        }
+
+        double new_cos = cos_a * cos_d - sin_a * sin_d;
+        double new_sin = sin_a * cos_d + cos_a * sin_d;
+
+        cos_a = new_cos;
+        sin_a = new_sin;
+    }
+
+    c.DrawText(text_x, text_y, display_label, [color](Pixel &p) {
+        p.foreground_color = Color::Default;
+        p.background_color = color;
+    });
 }
 
 void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entries, int current_depth, int max_depth, Scanner* scanner) {
@@ -135,15 +137,35 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
 
         int i = 0;
 
+        /* Color & offset tracking:
+        - layer_offsets_per_parent: 
+          Tracks the accumulated sweep (in degrees) already used for a given parent
+          at its current depth layer. This determines where the next child slice
+          of that parent should start (running angular total per parent).
+
+        - slice_offsets:
+          Stores the absolute starting angle of each slice (keyed by full path).
+          Used so that children can inherit their parent’s base offset and stack
+          correctly inside the parent’s angular span.
+
+        - slice_colors:
+          Stores the computed color for each slice (keyed by full path).
+          Allows child entries to derive their color from their parent’s color
+          (e.g., darkening via interpolation).
+          
+        - color_indexes:
+          Tracks how many slices have already been processed per depth layer per parent.
+          Used to progressively adjust (e.g., darken) sibling slice colors within
+          the same depth.
+        */
         std::map<std::string, int> layer_offsets_per_parent;
         std::map<std::string, int> slice_offsets;
-        
+
+        std::map<std::pair<int, std::string>, int> color_indexes_per_parent;        
+        std::map<std::string, Color> slice_colors;
+
         for(auto& entry : entries) {
             if(root_size <= 0) {
-                continue;
-            }
-
-            if(entry.depth != 0 && entry.depth != 1) {
                 continue;
             }
 
@@ -151,29 +173,57 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
                 continue;
             }
 
+            /* Performance:
+            - I choose only to keep 2 rings active during scanning
+            - Many rings imply an even larger amount of slices
+            - This causes a lot of DrawAngledBlockEllipseOffset(...) calls which are performance intensive on ui thread
+            - Ftxui has pixel buffer when rendering so 1rst render takes a long time with 4 rings (lots of pixel updates)
+            - 4 ring piechart is completed only on scan completion
+            */
+            if(entry.depth >= 2 && !scanner->isDone()) {
+                continue;
+            }
+
+            /* Pie geometry:
+            - Maybe make some of this user-customizable in the future.
+            */
             int inner_hole_radius = 10;
-            int inner_radius = inner_hole_radius + ((entry.depth + 1) * 20);
-            int outer_radius = inner_radius + 20;
+            int inner_radius = inner_hole_radius + ((entry.depth + 1) * 25);
+            int outer_radius = inner_radius + 25;
 
             int occupancy = entry.size * 100 / root_size;
             int sweep = occupancy * 360 / 100;
 
-            if(occupancy < cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) {
+            if(cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE != 0 && occupancy < cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) {
                 continue;
             }
 
-            std::array<int, 3UL> color = cfg.CHART_COLORS[i % cfg.CHART_COLORS.size()];
+            std::array<int, 3UL> color_values = cfg.CHART_COLORS[i % cfg.CHART_COLORS.size()];
+            Color color = Color::RGB(color_values[0], color_values[1], color_values[2]);
+
+            if(entry.depth != 0) {
+                std::string parent = entry.path.parent_path().string();
+
+                auto key = std::make_pair(entry.depth, parent);
+                color_indexes_per_parent[key] += 1;
+
+                color = slice_colors[parent];
+                color = Color::Interpolate(0.15 * color_indexes_per_parent[key], color, Color::Black);
+            }
+
+            slice_colors[entry.path.string()] = color;
 
             AppData::BonsaiPieEntry slice;
-            slice.color = Color::RGB(color[0], color[1], color[2]);
+            slice.color = color;
             slice.inner_radius = inner_radius;
             slice.outer_radius = outer_radius;
-            slice.label = "";
+            slice.label = entry.path.filename().string();
             slice.sweep = sweep;
 
             if(entry.depth == 0) {
-                slice.offset_angle = layer_offsets_per_parent["root"];
-                layer_offsets_per_parent["root"] += sweep;
+                slice.offset_angle = layer_offsets_per_parent[current_path];
+                layer_offsets_per_parent[current_path] += sweep;
+            
             } else {
                 std::string parent = entry.path.parent_path().string();
                 slice.offset_angle = slice_offsets[parent] + layer_offsets_per_parent[parent];
@@ -186,8 +236,14 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             i++;
         }
 
-        // Publish results
+        /* Possible optimisation
+        - It should be possible to concatenate slices on the same layer and have a different method than DrawAngledBlockEllipseOffset(...) be called for each slice of each layer
+        - This should save on rendering time as we only have to calculate our pie for each layer instead of for each slice of each layer.
+        - We'll see.
+        */
+
         {
+            // Publish results
             std::lock_guard<std::mutex> lock(data->pie_mutex);
             *data->pie_entries = std::move(slices);
         }
@@ -250,9 +306,10 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data) {
                     entry.inner_radius,
                     entry.offset_angle,
                     entry.sweep,
-                    [entry](ftxui::Pixel &p){ p.foreground_color = entry.color; }
+                    entry.label,
+                    entry.color
                 );
-                c.DrawText(w/2, h/2, entry.label);
+                // c.DrawText(w/2, h/2, entry.label);
             }
 
         }) | flex;

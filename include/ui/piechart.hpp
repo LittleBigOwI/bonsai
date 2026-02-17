@@ -70,5 +70,5 @@ private:
     - The fact that this draws and Ellipse isn't rlly useful as we always call this with r1 = r2.
       Some terminals have text interline that causes a deformation on ftxui canvas. Maybe use r1 and r2 to account for that deformation in the future?
     */
-    static void drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const Canvas::Stylizer& s);
+    static void drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const std::string& label, const Color& color);
 };

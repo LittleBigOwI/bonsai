@@ -60,6 +60,8 @@ int main(int argc, char* argv[]) {
     */
     data->pie_entries = std::make_shared<std::vector<AppData::BonsaiPieEntry>>();
     auto pie_component = BonsaiPie::pie(data);
+
+    pie_component->Render();
     
     std::thread pie_thread(BonsaiPie::worker, &screen, data, &scanner, default_path);
 
