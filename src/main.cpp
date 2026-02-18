@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
     - No need for a containter this time, as the component isn't interactive
     */
     data->pie_entries = std::make_shared<std::vector<AppData::BonsaiPieEntry>>();
-    auto pie_component = BonsaiPie::pie(data);
+    auto pie_component = BonsaiPie::pie(data, &scanner, default_path);
 
     pie_component->Render();
     

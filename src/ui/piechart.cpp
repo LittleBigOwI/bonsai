@@ -1,11 +1,12 @@
 #include "../../include/config/config.hpp"
+#include "../../include/utils/format.hpp"
 #include "../../include/ui/piechart.hpp"
 
 #include <iostream>
 #include <cmath>
 #include <map>
 
-void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int r1, int r2, int r_inner, double start_deg, double sweep_deg, const std::string& label, const Color& color) {
+void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int r1, int r2, int r_inner, double start_deg, double sweep_deg, const std::string& label, const Color& color, const Color& text_color) {
     if (sweep_deg <= 0.0)
         return;
 
@@ -20,10 +21,10 @@ void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int 
 
     /* Angle step — controls smoothness vs speed
     - Smaller = smoother but slower
-    - 0.5deg is usually visually perfect in terminal
+    - 0.4 deg is usually visually perfect in terminal
     - Make it user adjustable? idk.
     */
-    const double step = 0.5 * M_PI / 180.0;
+    const double step = 0.4 * M_PI / 180.0;
 
     double cos_a = std::cos(start);
     double sin_a = std::sin(start);
@@ -67,8 +68,8 @@ void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int 
         sin_a = new_sin;
     }
 
-    c.DrawText(text_x, text_y, display_label, [color](Pixel &p) {
-        p.foreground_color = Color::Default;
+    c.DrawText(text_x, text_y, display_label, [color, text_color](Pixel &p) {
+        p.foreground_color = text_color;
         p.background_color = color;
     });
 }
@@ -149,7 +150,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
           correctly inside the parent’s angular span.
 
         - slice_colors:
-          Stores the computed color for each slice (keyed by full path).
+          Stores the computed color and text color for each slice (keyed by full path).
           Allows child entries to derive their color from their parent’s color
           (e.g., darkening via interpolation).
           
@@ -162,7 +163,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         std::map<std::string, int> slice_offsets;
 
         std::map<std::pair<int, std::string>, int> color_indexes_per_parent;        
-        std::map<std::string, Color> slice_colors;
+        std::map<std::string, std::pair<Color, Color>> slice_colors;
 
         for(auto& entry : entries) {
             if(root_size <= 0) {
@@ -199,7 +200,9 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             }
 
             std::array<int, 3UL> color_values = cfg.CHART_COLORS[i % cfg.CHART_COLORS.size()];
+            
             Color color = Color::RGB(color_values[0], color_values[1], color_values[2]);
+            Color text_color = Color::Default;
 
             if(entry.depth != 0) {
                 std::string parent = entry.path.parent_path().string();
@@ -207,14 +210,22 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
                 auto key = std::make_pair(entry.depth, parent);
                 color_indexes_per_parent[key] += 1;
 
-                color = slice_colors[parent];
+                color = slice_colors[parent].first;
                 color = Color::Interpolate(0.15 * color_indexes_per_parent[key], color, Color::Black);
+
+                text_color = slice_colors[parent].second;
             }
 
-            slice_colors[entry.path.string()] = color;
+            // In these two code blocks, false is the logic to check wether the slice is selected
+            color = false ? Color::White : color;
+            text_color = false ? Color::Black : text_color;
+            
+            slice_colors[entry.path.string()].first = color;
+            slice_colors[entry.path.string()].second = text_color;
 
             AppData::BonsaiPieEntry slice;
             slice.color = color;
+            slice.text_color = text_color;
             slice.inner_radius = inner_radius;
             slice.outer_radius = outer_radius;
             slice.label = entry.path.filename().string();
@@ -284,9 +295,9 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
     }
 }
 
-Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data) {
-    return Renderer([data] {
-        return canvas([data](Canvas& c) {
+Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
+    return Renderer([data, scanner, default_path] {
+        return canvas([data, scanner, default_path](Canvas& c) {
             int w = c.width();
             int h = c.height();
 
@@ -307,10 +318,16 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data) {
                     entry.offset_angle,
                     entry.sweep,
                     entry.label,
-                    entry.color
+                    entry.color,
+                    entry.text_color
                 );
-                // c.DrawText(w/2, h/2, entry.label);
             }
+
+            uint64_t current_size = scanner->get(default_path);
+            std::string label = FormatUtils::toReadable(current_size, " ");
+
+            // For some reason +3.5 centers text better.
+            c.DrawText(w / 2 - (static_cast<int>(label.size()) / 2 + 3.5), h/2, label);
 
         }) | flex;
     });

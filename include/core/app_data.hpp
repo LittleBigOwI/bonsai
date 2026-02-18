@@ -27,6 +27,7 @@ public:
 
     struct BonsaiPieEntry {
         std::string label;
+        Color text_color;
         Color color;
 
         int inner_radius;
