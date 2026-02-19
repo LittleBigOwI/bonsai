@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
     
     data->menu_entries = std::make_shared<std::vector<AppData::BonsaiMenuEntry>>();
     data->menu_labels = std::make_shared<std::vector<std::string>>();
+    data->selected_path = std::make_shared<std::string>(default_path);
     data->path = std::make_shared<std::string>(default_path);
 
 

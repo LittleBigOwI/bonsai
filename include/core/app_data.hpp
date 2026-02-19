@@ -51,6 +51,7 @@ public:
         std::mutex pie_mutex;
         std::shared_ptr<std::vector<BonsaiPieEntry>> pie_entries;
 
+        std::shared_ptr<std::string> selected_path;
         std::shared_ptr<std::string> path;
 
         std::mutex cv_mutex;

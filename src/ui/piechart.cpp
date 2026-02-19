@@ -1,6 +1,7 @@
+#include "../../include/ui/piechart.hpp"
+
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
-#include "../../include/ui/piechart.hpp"
 
 #include <iostream>
 #include <cmath>
@@ -107,13 +108,19 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         std::vector<EntryInfo> entries;
 
         fs::path current_path;
+        fs::path selected_path;
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
             current_path = *data->path;
+            selected_path = *data->selected_path;
         }
 
+        // Get size of current dir
+        uint64_t root_size = scanner->get(current_path);
+        Config cfg = Config::get();
+
         // Parse current path with a max depth of 3
-        collectEntries(current_path, entries, 0, 3, scanner);
+        collectEntries(current_path, entries, 0, cfg.CHART_MAX_GENERATIONS - 1, scanner);
 
         /* Sort:
         - Depth first: lower depth is higer priority
@@ -131,10 +138,6 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         });
 
         std::vector<AppData::BonsaiPieEntry> slices;
-
-        // Get size of current dir
-        uint64_t root_size = scanner->get(current_path);
-        Config cfg = Config::get();
 
         int i = 0;
 
@@ -217,8 +220,8 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             }
 
             // In these two code blocks, false is the logic to check wether the slice is selected
-            color = false ? Color::White : color;
-            text_color = false ? Color::Black : text_color;
+            color = entry.path == selected_path ? Color::White : color;
+            text_color = entry.path == selected_path ? Color::Black : text_color;
             
             slice_colors[entry.path.string()].first = color;
             slice_colors[entry.path.string()].second = text_color;

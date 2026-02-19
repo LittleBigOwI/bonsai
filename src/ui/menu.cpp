@@ -3,6 +3,8 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
+#include <iostream>
+
 void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
     while (true) {
         std::vector<AppData::BonsaiMenuEntry> new_entries;
@@ -142,6 +144,7 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
                 new_path = p.parent_path().string();
             }
 
+            *data->selected_path = new_path;
             *data->path = new_path;
         }
 
@@ -154,6 +157,22 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
 
         data->cv.notify_all();
     };
+
+    options.on_change = [data, selected]() {
+        {
+            std::lock_guard<std::mutex> lock(data->menu_mutex);
+            if (*selected < 0 || *selected >= (int)data->menu_entries->size()) return;
+            *data->selected_path = (*data->menu_entries)[*selected].path;
+        }
+
+        {
+            // Only wake up pie
+            std::lock_guard<std::mutex> lock(data->cv_mutex);
+            data->pie_path_changed = true;
+        }
+
+        data->cv.notify_all();
+    };    
 
     // Menu is updated as labels update
     return Menu(data->menu_labels.get(), selected, options);
