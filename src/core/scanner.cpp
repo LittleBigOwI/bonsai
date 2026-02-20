@@ -41,6 +41,7 @@ uint64_t Scanner::computeDirSizes(const fs::path& dir) {
 
     uint64_t total_size = 0;
 
+    // Some of these entry types can cause loops in scanning anf have no real value
     if (!fs::exists(dir) || !fs::is_directory(dir) || isVirtualFs(dir))
         return 0;
 
@@ -48,6 +49,7 @@ uint64_t Scanner::computeDirSizes(const fs::path& dir) {
     if (lstat(dir.c_str(), &st) != 0)
         return 0;
 
+    // Make sure wh haven't visited anything
     Inode inode{st.st_dev, st.st_ino};
     if (visited.find(inode) != visited.end())
         return 0;

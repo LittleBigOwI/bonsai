@@ -7,6 +7,7 @@
 
 class FormatUtils {
 public:
+    // Just convert a size in bytes to a human readable format
     static std::string toReadable(uintmax_t bytes, const std::string& spacer = " ") {
         constexpr uintmax_t KB = 1024;
         constexpr uintmax_t MB = KB * 1024;
@@ -27,6 +28,7 @@ public:
         return oss.str();
     }
 
+    // Same thing without the spacer argument
     static std::string toReadableShort(uintmax_t bytes) {
         return toReadable(bytes, "");
     }

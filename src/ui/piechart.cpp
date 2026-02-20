@@ -11,6 +11,7 @@ void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int 
     if (sweep_deg <= 0.0)
         return;
 
+    // This could also be made user-customizable
     int max_label_length = 5;
     std::string display_label = label;
     if (display_label.length() > max_label_length) {
@@ -195,10 +196,10 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             int inner_radius = inner_hole_radius + ((entry.depth + 1) * 25);
             int outer_radius = inner_radius + 25;
 
-            int occupancy = entry.size * 100 / root_size;
-            int sweep = occupancy * 360 / 100;
+            double occupancy = entry.size * 100 / root_size;
+            double sweep = occupancy * 360 / 100;
 
-            if(cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE != 0 && occupancy < cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) {
+            if(occupancy < cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) {
                 continue;
             }
 
@@ -214,7 +215,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
                 color_indexes_per_parent[key] += 1;
 
                 color = slice_colors[parent].first;
-                color = Color::Interpolate(0.15 * color_indexes_per_parent[key], color, Color::Black);
+                color = Color::Interpolate(cfg.CHART_DIM_FACTOR * color_indexes_per_parent[key], color, Color::Black);
 
                 text_color = slice_colors[parent].second;
             }

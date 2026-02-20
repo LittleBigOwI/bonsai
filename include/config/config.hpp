@@ -35,10 +35,10 @@ public:
     std::string SIDEBAR_FILE_ICON;
     std::string SIDEBAR_BACK_ICON;
 
-    int CHART_MAX_SIZE_THRESHOLD_PERCENTAGE;
     int CHART_MAX_GENERATIONS;
     int SIDEBAR_WIDTH;
-
+    
+    double CHART_MAX_SIZE_THRESHOLD_PERCENTAGE;
     double CHART_DIM_FACTOR;
 
     /* Lazy initialization using a lambda:
@@ -147,7 +147,7 @@ private:
                     cfg.SIDEBAR_BACK_ICON = value.substr(1, value.size() - 2);
                 
                 else if (key == "CHART_MAX_SIZE_THRESHOLD_PERCENTAGE")
-                    cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE = std::stoi(value);
+                    cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE = std::stod(value);
                 
                 else if (key == "CHART_MAX_GENERATIONS")
                     cfg.CHART_MAX_GENERATIONS = std::stoi(value);

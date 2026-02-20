@@ -51,24 +51,37 @@ private:
 
     static void collectEntries(const fs::path& dir, std::vector<EntryInfo>& entries, int current_depth, int max_depth, Scanner* scanner);
 
-    /* Draws a ring sector of an ellipse on the Canvas.
-    - Inputs:
-        - (x1, y1) -> center of the ellipse.
-        - r1, r2    -> radii along x and y axes.
-        - r3        -> inner radius to create a hollow ring.
-        - starting_angle -> where the sector starts (degrees).
-        - angle          -> sweep of the sector (degrees).
-        - s -> stylizer (color/attributes).
-    - Computes angular and radial bounds for each pixel.
-    - Checks if pixel is:
-        - Within angular sweep.
-        - Outside the inner radius (to create ring effect).
-    - Iterates over ellipse pixels using an ellipse midpoint-like algorithm.
-    - Draws pixels that pass checks with c.DrawBlock.
-    - Result: one ring-shaped slice corresponding to a portion of a pie chart.
+    /* Draws a ring-shaped sector of an ellipse onto the Canvas.
+    Parameters:
+        - cx, cy       -> Center of the ellipse.
+        - r1, r2       -> Outer radii along X and Y axes (supports non-uniform scaling).
+        - r_inner      -> Inner radius (creates the hollow ring effect).
+        - start_deg    -> Starting angle in degrees.
+        - sweep_deg    -> Angular sweep in degrees.
+        - label        -> Text displayed inside the slice (truncated if too long).
+        - color        -> Fill color of the slice.
+        - text_color   -> Color of the label text.
 
-    - The fact that this draws and Ellipse isn't rlly useful as we always call this with r1 = r2.
-      Some terminals have text interline that causes a deformation on ftxui canvas. Maybe use r1 and r2 to account for that deformation in the future?
+    Behavior:
+        - Converts angles from degrees to radians.
+        - Iterates from start angle to end angle using a small angular step
+        (controls smoothness vs performance).
+        - Uses incremental rotation (cos/sin delta) to avoid repeated trig calls.
+        - For each angle step:
+            - Interpolates radially from r_inner to outer radius.
+            - Draws blocks that fall within the elliptical boundary.
+        - Computes mid-angle and mid-radius to position the label
+        approximately centered inside the slice.
+        - Renders the label with foreground/background color contrast.
+
+    Notes:
+        - Although this supports true ellipses (r1 != r2),
+        it is currently used with r1 == r2 (i.e., circles).
+        - Terminal character aspect ratios can visually distort circles.
+        r1 and r2 could be adjusted in the future to compensate for
+        vertical text scaling differences in FTXUI.
+        - Angular step (currently ~0.4°) is a visual/performance trade-off
+        and could be made configurable.
     */
     static void drawAngledBlockEllipseRingOffset(Canvas& c, int x1, int y1, int r1, int r2, int r3, double starting_angle, double angle, const std::string& label, const Color& color, const Color& text_color);
 };

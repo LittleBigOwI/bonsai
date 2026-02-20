@@ -11,6 +11,15 @@
 
 namespace fs = std::filesystem;
 
+/* TODO: bug? (can't reproduce anymore...)
+-> scanner isn't finished.
+-> menu scans for a folder, and updates sizes in list
+-> this updates render, that updates piechart.
+-> piechart worker doesn't wake up
+-> for some reason percentages are updated but folder list isn't?
+
+-> Maybe fixable with callback on scan completed (update render on complete) since this only happens when scanner is done
+*/
 int main(int argc, char* argv[]) {
     using namespace ftxui;
 
@@ -101,13 +110,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
-/* TODO: bug
--> scanner isn't finished.
--> menu scans for a folder, and updates sizes in list
--> this updates render, that updates piechart.
--> piechart worker doesn't wake up
--> for some reason percentages are updated but folder list isn't?
-
--> Maybe fixable with callback on scan completed (update render) since this only happens when scanner is done
-*/
