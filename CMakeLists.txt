@@ -47,6 +47,10 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 add_executable(bonsai ${SRC})
 add_dependencies(bonsai generate_bonsai_conf_header)
 
+target_compile_options(bonsai PRIVATE
+    $<$<CONFIG:Release>:-O3>
+)
+
 target_link_libraries(bonsai
     ftxui::screen
     ftxui::dom
