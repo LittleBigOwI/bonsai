@@ -3,7 +3,6 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
-#include <iostream>
 #include <cmath>
 #include <map>
 
@@ -108,12 +107,15 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
     while (true) {
         std::vector<EntryInfo> entries;
 
-        fs::path current_path;
-        fs::path selected_path;
+        fs::path current_path = "";
+        fs::path selected_path = "";
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
             current_path = *data->path;
-            selected_path = *data->selected_path;
+
+            if (*data->selected >= 0 && *data->selected < (int)data->menu_entries->size()) {
+                selected_path = (*data->menu_entries)[*data->selected].path;
+            }
         }
 
         // Get size of current dir
@@ -300,15 +302,17 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
 }
 
 Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
-    return Renderer([data, scanner, default_path] {
-        return canvas([data, scanner, default_path](Canvas& c) {
+    return Renderer([data, scanner] {
+        return canvas([data, scanner](Canvas& c) {
             int w = c.width();
             int h = c.height();
 
             std::vector<AppData::BonsaiPieEntry> entries;
+            fs::path current_path;
             {
                 std::lock_guard<std::mutex> lock(data->pie_mutex);
                 entries = *data->pie_entries;
+                current_path = *data->path;
             }
 
             for (AppData::BonsaiPieEntry entry : entries) {
@@ -327,7 +331,7 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* sca
                 );
             }
 
-            uint64_t current_size = scanner->get(default_path);
+            uint64_t current_size = scanner->get(current_path);
             std::string label = FormatUtils::toReadable(current_size, " ");
 
             // For some reason +3.5 centers text better.

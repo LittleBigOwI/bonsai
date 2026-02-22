@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
 
     auto config = Config::get();
     auto screen = ScreenInteractive::Fullscreen();
-    auto default_path = argc == 1 ? fs::current_path() : argv[1];
+    auto default_path = argc == 1 ? fs::current_path() : fs::weakly_canonical(argv[1]);
 
     if(!fs::exists(default_path)) {
         std::cerr << "Error: Path does not exist: " << default_path << std::endl;
@@ -36,7 +36,6 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error: Path isn't a directory: " << default_path << std::endl;
         return 1;
     }
-
 
     // Launch scanner
     Scanner scanner = Scanner(default_path);
@@ -49,8 +48,9 @@ int main(int argc, char* argv[]) {
     
     data->menu_entries = std::make_shared<std::vector<AppData::BonsaiMenuEntry>>();
     data->menu_labels = std::make_shared<std::vector<std::string>>();
-    data->selected_path = std::make_shared<std::string>(default_path);
+
     data->path = std::make_shared<std::string>(default_path);
+    data->selected = std::make_shared<int>(0);
 
 
     /* Init menu:

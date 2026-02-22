@@ -51,8 +51,8 @@ public:
         std::mutex pie_mutex;
         std::shared_ptr<std::vector<BonsaiPieEntry>> pie_entries;
 
-        std::shared_ptr<std::string> selected_path;
         std::shared_ptr<std::string> path;
+        std::shared_ptr<int> selected;
 
         std::mutex cv_mutex;
         std::condition_variable cv;
@@ -60,6 +60,7 @@ public:
         bool menu_path_changed = false;
         bool pie_path_changed = false;
         bool stop = false;
+
     };
 
     /* stop()

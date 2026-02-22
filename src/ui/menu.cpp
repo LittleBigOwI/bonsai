@@ -3,8 +3,6 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
-#include <iostream>
-
 void BonsaiMenu::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
     while (true) {
         std::vector<AppData::BonsaiMenuEntry> new_entries;
@@ -135,7 +133,10 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
         std::string new_path;
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
-            if (*selected < 0 || *selected >= (int)data->menu_entries->size() || !(*data->menu_entries)[*selected].is_dir) return;
+            if (*selected < 0 || *selected >= (int)data->menu_entries->size() || !(*data->menu_entries)[*selected].is_dir) {
+                return;
+            };
+            
             new_path = (*data->menu_entries)[*selected].path;
 
             // For ".." go up
@@ -144,7 +145,7 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
                 new_path = p.parent_path().string();
             }
 
-            *data->selected_path = new_path;
+            *data->selected = *selected;
             *data->path = new_path;
         }
 
@@ -161,8 +162,11 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
     options.on_change = [data, selected]() {
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
-            if (*selected < 0 || *selected >= (int)data->menu_entries->size()) return;
-            *data->selected_path = (*data->menu_entries)[*selected].path;
+            if (*selected < 0 || *selected >= (int)data->menu_entries->size()) {
+                return;
+            }
+
+            *data->selected = *selected;
         }
 
         {
