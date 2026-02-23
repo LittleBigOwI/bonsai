@@ -95,9 +95,17 @@ int main(int argc, char* argv[]) {
         });
     });
 
+    // Quit with q
+    auto app = CatchEvent(window, [&](Event event) {
+        if (event == Event::Character('q') || event == Event::Character('Q')) {
+            screen.Exit();
+            return true;
+        }
+        return false;
+    });
 
     // Render UI
-    screen.Loop(window);
+    screen.Loop(app);
     
 
     // Stop app

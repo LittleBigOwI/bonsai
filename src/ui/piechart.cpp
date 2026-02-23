@@ -22,10 +22,10 @@ void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int 
 
     /* Angle step — controls smoothness vs speed
     - Smaller = smoother but slower
-    - 0.4 deg is usually visually perfect in terminal
+    - 0.3 deg is usually visually perfect in terminal
     - Make it user adjustable? idk.
     */
-    const double step = 0.4 * M_PI / 180.0;
+    const double step = 0.3 * M_PI / 180.0;
 
     double cos_a = std::cos(start);
     double sin_a = std::sin(start);
@@ -109,17 +109,20 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
     while (true) {
 
         fs::path current_path = "";
-        fs::path selected_path = "";
         bool sel_changed = false;
+        int selected = 0;
+        
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
             sel_changed = data->pie_sel_changed;
             current_path = *data->path;
 
+            // If the top label is ".." it means we have to offset selected index by -1
             if (*data->selected >= 0 && *data->selected < (int)data->menu_entries->size()) {
-                selected_path = (*data->menu_entries)[*data->selected].path;
+                selected = !fs::equivalent(default_path, current_path) ? *data->selected - 1 : *data->selected;
             }
 
+            // Don't forget to reset wake up condition
             if(data->pie_sel_changed) {
                 data->pie_sel_changed = false;
             }
@@ -129,9 +132,10 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         uint64_t root_size = scanner->get(current_path);
         Config cfg = Config::get();
 
+        // Only recompute children if path has changed
         if(!sel_changed){
             entries.clear();
-            
+
             // Parse current path with a max depth of 3
             collectEntries(current_path, entries, 0, cfg.CHART_MAX_GENERATIONS - 1, scanner);
 
@@ -233,14 +237,19 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
                 text_color = slice_colors[parent].second;
             }
 
-            // In these two code blocks, false is the logic to check wether the slice is selected
-            color = entry.path == selected_path ? Color::White : color;
-            text_color = entry.path == selected_path ? Color::Black : text_color;
-            
+            /* In these two code blocks, false is the logic to check wether the slice is selected
+            - selected can be -1 because we manually add a back entry for non default_dir paths
+            */ 
+            if(selected != -1 && entry.depth == 0 && entries[selected].depth == 0) {
+                color = fs::equivalent(entry.path, entries[selected].path) ? Color::White : color;
+                text_color = fs::equivalent(entry.path, entries[selected].path) ? Color::Black : text_color;
+            }
+
             slice_colors[entry.path.string()].first = color;
             slice_colors[entry.path.string()].second = text_color;
 
             AppData::BonsaiPieEntry slice;
+            slice.depth = entry.depth;
             slice.color = color;
             slice.text_color = text_color;
             slice.inner_radius = inner_radius;
@@ -318,22 +327,37 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* sca
             int w = c.width();
             int h = c.height();
 
+            // Account for margin (15) and center hole (15%)
+            int max_radius = std::min(w, h) / 2 - 15;
+            int inner_hole_radius = max_radius * 0.15;
+
+            Config cfg = Config::get();
+            int max_layers = cfg.CHART_MAX_GENERATIONS;
+
+            int available_radius = max_radius - inner_hole_radius;
+            int layer_thickness = available_radius / max_layers;
+
             std::vector<AppData::BonsaiPieEntry> entries;
             fs::path current_path;
+
             {
                 std::lock_guard<std::mutex> lock(data->pie_mutex);
                 entries = *data->pie_entries;
                 current_path = *data->path;
             }
 
-            for (AppData::BonsaiPieEntry entry : entries) {
+            for (auto& entry : entries) {
+
+                int inner_radius = inner_hole_radius + entry.depth * layer_thickness;
+                int outer_radius = inner_radius + layer_thickness;
+
                 BonsaiPie::drawAngledBlockEllipseRingOffset(
                     c,
                     w / 2,
                     h / 2,
-                    entry.outer_radius,
-                    entry.outer_radius,
-                    entry.inner_radius,
+                    outer_radius,
+                    outer_radius,
+                    inner_radius,
                     entry.offset_angle,
                     entry.sweep,
                     entry.label,
@@ -345,8 +369,8 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* sca
             uint64_t current_size = scanner->get(current_path);
             std::string label = FormatUtils::toReadable(current_size, " ");
 
-            // For some reason +3.5 centers text better.
-            c.DrawText(w / 2 - (static_cast<int>(label.size()) / 2 + 3.5), h/2, label);
+            // For some reason +3.5 centers text better
+            c.DrawText((w / 2 - label.size() / 2) - 3.5, h / 2, label);
 
         }) | flex;
     });

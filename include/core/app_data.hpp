@@ -34,6 +34,7 @@ public:
         int outer_radius;
         int offset_angle;
         int sweep;
+        int depth;
     };
 
     /* BonsaiMenuData
