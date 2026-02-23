@@ -170,9 +170,11 @@ Component BonsaiMenu::menu(ScreenInteractive* screen, std::shared_ptr<AppData::B
         }
 
         {
-            // Only wake up pie
+            /* Only wake up pie
+            - Made so that it only partially re-renders / doesn't have to compute all children again
+            */
             std::lock_guard<std::mutex> lock(data->cv_mutex);
-            data->pie_path_changed = true;
+            data->pie_sel_changed = true;
         }
 
         data->cv.notify_all();

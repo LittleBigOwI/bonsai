@@ -59,6 +59,7 @@ public:
 
         bool menu_path_changed = false;
         bool pie_path_changed = false;
+        bool pie_sel_changed = false;
         bool stop = false;
 
     };

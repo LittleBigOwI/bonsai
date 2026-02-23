@@ -102,19 +102,26 @@ void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entr
 }
 
 void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::BonsaiData> data, Scanner* scanner, const fs::path& default_path) {
+    std::vector<EntryInfo> entries;
+
     int passes = 0;
-    
+        
     while (true) {
-        std::vector<EntryInfo> entries;
 
         fs::path current_path = "";
         fs::path selected_path = "";
+        bool sel_changed = false;
         {
             std::lock_guard<std::mutex> lock(data->menu_mutex);
+            sel_changed = data->pie_sel_changed;
             current_path = *data->path;
 
             if (*data->selected >= 0 && *data->selected < (int)data->menu_entries->size()) {
                 selected_path = (*data->menu_entries)[*data->selected].path;
+            }
+
+            if(data->pie_sel_changed) {
+                data->pie_sel_changed = false;
             }
         }
 
@@ -122,23 +129,27 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
         uint64_t root_size = scanner->get(current_path);
         Config cfg = Config::get();
 
-        // Parse current path with a max depth of 3
-        collectEntries(current_path, entries, 0, cfg.CHART_MAX_GENERATIONS - 1, scanner);
+        if(!sel_changed){
+            entries.clear();
+            
+            // Parse current path with a max depth of 3
+            collectEntries(current_path, entries, 0, cfg.CHART_MAX_GENERATIONS - 1, scanner);
 
-        /* Sort:
-        - Depth first: lower depth is higer priority
-        - Type second: directories have a higher priority over files
-        - Size third: larger sizes have a higher priority over lower ones
-        
-        - Maybe we could use a priority queue here? idk.
-        */
-        std::sort(entries.begin(), entries.end(), [](const EntryInfo& a, const EntryInfo& b) {
-            if (a.depth != b.depth)
-                return a.depth < b.depth;
-            if (a.is_dir != b.is_dir)
-                return a.is_dir > b.is_dir;
-            return a.size > b.size;
-        });
+            /* Sort:
+            - Depth first: lower depth is higer priority
+            - Type second: directories have a higher priority over files
+            - Size third: larger sizes have a higher priority over lower ones
+            
+            - Maybe we could use a priority queue here? idk.
+            */
+            std::sort(entries.begin(), entries.end(), [](const EntryInfo& a, const EntryInfo& b) {
+                if (a.depth != b.depth)
+                    return a.depth < b.depth;
+                if (a.is_dir != b.is_dir)
+                    return a.is_dir > b.is_dir;
+                return a.size > b.size;
+            });
+        }
 
         std::vector<AppData::BonsaiPieEntry> slices;
 
@@ -289,7 +300,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             std::unique_lock<std::mutex> lock(data->pie_mutex);
 
             data->cv.wait(lock, [&] {
-                return data->pie_path_changed || data->stop;
+                return data->pie_path_changed || data->pie_sel_changed || data->stop;
             });
 
             if (data->stop)
