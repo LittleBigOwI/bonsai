@@ -27,6 +27,7 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 - Ability to search for folders
 - Ability to sort folders
 - Translations
+- Windows port
 
 ## Dependencies
 - Make sure you have a terminal that supports RGB color coding
