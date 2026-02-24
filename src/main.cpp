@@ -60,8 +60,32 @@ int main(int argc, char* argv[]) {
     MenuOption option;
 
     auto menu_component = BonsaiMenu::menu(&screen, data, &selected, default_path, option);
-    auto menu_container = Container::Vertical({menu_component});
+    menu_component = CatchEvent(menu_component, [data, &scanner](Event event) {
+        if (event == Event::Delete) {
+            fs::path selected_path;
 
+            {
+                std::lock_guard<std::mutex> lock(data->menu_mutex);
+                selected_path = (*data->menu_entries)[*data->selected].path;
+            }
+
+            scanner.remove(selected_path);
+
+            {
+                // Wake up both pie and menu on change
+                std::lock_guard<std::mutex> lock(data->cv_mutex);
+                data->menu_path_changed = true;
+                data->pie_path_changed = true;
+            }
+
+            data->cv.notify_all();
+
+            return true;
+        }
+        return false;
+    });
+    
+    auto menu_container = Container::Vertical({menu_component});
     std::thread menu_thread(BonsaiMenu::worker, &screen, data, &scanner, default_path);
 
     
@@ -69,10 +93,8 @@ int main(int argc, char* argv[]) {
     - No need for a containter this time, as the component isn't interactive
     */
     data->pie_entries = std::make_shared<std::vector<AppData::BonsaiPieEntry>>();
-    auto pie_component = BonsaiPie::pie(data, &scanner, default_path);
 
-    pie_component->Render();
-    
+    auto pie_component = BonsaiPie::pie(data, &scanner, default_path);
     std::thread pie_thread(BonsaiPie::worker, &screen, data, &scanner, default_path);
 
     // Init main UI
@@ -106,7 +128,7 @@ int main(int argc, char* argv[]) {
 
     // Render UI
     screen.Loop(app);
-    
+
 
     // Stop app
     scanner.stop();

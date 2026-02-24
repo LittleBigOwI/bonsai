@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <thread>
 
+#include <iostream>
+
 bool Scanner::isVirtualFs(const fs::path& path) {
     std::string strPath = path.string();
     
@@ -72,8 +74,7 @@ uint64_t Scanner::computeDirSizes(const fs::path& dir) {
                 std::unique_lock lock(map_mutex);
                 dir_sizes[dir.string()] = total_size;
             }
-        }
-        catch (const fs::filesystem_error&) {}
+        } catch (const fs::filesystem_error&) {}
     }
 
     return total_size;
@@ -87,6 +88,61 @@ uint64_t Scanner::get(const fs::path& path) {
         return it->second;
 
     return 0;
+}
+
+bool Scanner::remove(const fs::path& path) {
+    {
+        std::lock_guard<std::mutex> lock(stop_mutex);
+        
+        if (!this->done) {
+            return false;
+        }
+    }
+
+    std::string target = path.string();
+
+    uint64_t removed_size = 0;
+
+    {
+        std::lock_guard<std::mutex> lock(map_mutex);
+        removed_size = dir_sizes[path.string()];
+    }
+
+    std::error_code ec;
+    try {
+        if (fs::is_directory(path)) {
+            fs::remove_all(path, ec);
+        } else {
+            fs::remove(path, ec);
+        }
+    } catch (const fs::filesystem_error&) {}
+
+    if (ec) {
+        return false;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(map_mutex);
+        fs::path current = path.parent_path();
+
+        while (!current.empty()) {
+            dir_sizes[current.string()] -= removed_size;
+
+            if (dir_sizes[current.string()] < 0) {
+                dir_sizes[current.string()] = 0;
+            } 
+
+            if (fs::equivalent(this->path, current)) {
+                break;
+            }
+
+            current = current.parent_path();
+        }
+
+        dir_sizes.erase(target);
+    }
+
+    return true;
 }
 
 void Scanner::scan() {
