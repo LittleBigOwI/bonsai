@@ -9,26 +9,27 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 
 ## Features
 
-- Navigable sidebar displaying folder sizes, sorted by a multithreaded scanning algorithm
+- Navigable sidebar displaying folder sizes, sorted by a scanning algorithm
 - Pie chart visualization similar to GNOME Baobab:
   - Multiple rings representing nested directories
   - Color-coded sections for files and folders
-  - Percentage size usage labels for each item
+  - Labels for each item
 - Built using **CMake** and **FTXUI** for a modern TUI experience
-- Tree and hashmap-based data structure for efficient folder size lookups
+- Hashmap scan for efficient folder size lookups
 - Dynamic pie chart updates when navigating between folders in the sidebar  
 - Pie chart highlighting when hovering over folders or files 
-- Asynchronous UI rendering before scan completion
+- Asynchronous UI rendering
 - User customization via configuration file
 - Ability to remove files / folders
 
 ## Planned Features
 
-- Visually better async rendering when scanning disk
-- Cleaner pie chart labels
-- Ability to quit using something else than CTRL+C
 - Ability to search for folders
 - Ability to sort folders
+- Translations
+
+## Dependencies
+- Make sure you have a terminal that supports RGB color coding
 
 ## Installation
 ### Arch Linux (AUR)
@@ -37,21 +38,19 @@ You can install Bonsai directly from the AUR:
 ```bash
 # Using an AUR helper like yay
 yay -S bonsai
-
-# Or manually with makepkg
-git clone https://aur.archlinux.org/bonsai.git
-cd bonsai
-makepkg -si
 ```
 
 ### Other Linux distributions
-Make sure you've installed the correct version of ftxui (usually the latest one).
 
 Build manually from source:
 ```bash
 git clone https://github.com/LittleBigOwI/bonsai.git
+
 cd bonsai
-mkdir build && cd build
-cmake .. && make
-./bonsai
+mkdir build
+
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+
+./build/bonsai
 ```
