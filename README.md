@@ -25,12 +25,32 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 ## Planned Features
 
 - Ability to search for folders
-- Ability to sort folders
-- Translations
-- Windows port
+- Translations?
+- Windows port?
 
 ## Dependencies
-- Make sure you have a terminal that supports RGB color coding
+
+Before running, make sure you have:
+
+- A terminal that supports RGB color coding
+- CMake
+- A C compiler
+- Xdd
+
+## Usage
+
+### Keyboard Controls
+
+- **`q`** → Quit
+- **Backspace / Escape** → Go back a folder
+- **Up / Down arrows** → Navigate the menu
+- **Enter** → Select a folder in the menu or a button in a modal
+- **Escape** → Exit a modal
+
+### Mouse Controls
+
+- **Scroll** → Navigate up and down in the menu
+- **Click** → Select a button in a modal
 
 ## Installation
 ### Arch Linux (AUR)
