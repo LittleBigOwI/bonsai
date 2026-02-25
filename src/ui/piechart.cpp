@@ -213,8 +213,8 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             int inner_radius = inner_hole_radius + ((entry.depth + 1) * 25);
             int outer_radius = inner_radius + 25;
 
-            double occupancy = entry.size * 100 / root_size;
-            double sweep = occupancy * 360 / 100;
+            int occupancy = entry.size * 100 / root_size;
+            int sweep = occupancy * 360 / 100;
 
             if(occupancy < cfg.CHART_MAX_SIZE_THRESHOLD_PERCENTAGE) {
                 continue;
@@ -369,8 +369,8 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* sca
             uint64_t current_size = scanner->get(current_path);
             std::string label = FormatUtils::toReadable(current_size, " ");
 
-            // For some reason +3.5 centers text better
-            c.DrawText((w / 2 - label.size() / 2) - 3.5, h / 2, label);
+            // For some reason -4 centers text better
+            c.DrawText((w / 2 - label.size() / 2) - 4, h / 2, label);
 
         }) | flex;
     });

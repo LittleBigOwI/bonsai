@@ -20,6 +20,7 @@ set(SRC
     src/core/scanner.cpp
 
     src/ui/menu.cpp
+    src/ui/modal_confirm.cpp
     src/ui/piechart.cpp
 )
 

@@ -1,3 +1,4 @@
+#include "../include/ui/modal_confirm.hpp"
 #include "../include/config/config.hpp"
 #include "../include/core/app_data.hpp"
 #include "../include/core/scanner.hpp"
@@ -52,16 +53,10 @@ int main(int argc, char* argv[]) {
     data->path = std::make_shared<std::string>(default_path);
     data->selected = std::make_shared<int>(0);
 
-
-    /* Init menu:
-    - Use a container to keep focus through the entire render.
-      If a menu component is embeded in a slew of elements, it becomes static
-    */
-    MenuOption option;
-
-    auto menu_component = BonsaiMenu::menu(&screen, data, &selected, default_path, option);
-    menu_component = CatchEvent(menu_component, [data, &scanner](Event event) {
-        if (event == Event::Delete) {
+    // Init confirm modal
+    bool show_confirm_modal = false;
+    auto confirm_modal = BonsaiModalConfirm::confirm(
+        [data, &scanner, &show_confirm_modal](){
             fs::path selected_path;
 
             {
@@ -70,6 +65,7 @@ int main(int argc, char* argv[]) {
             }
 
             scanner.remove(selected_path);
+            show_confirm_modal = false; 
 
             {
                 // Wake up both pie and menu on change
@@ -79,7 +75,23 @@ int main(int argc, char* argv[]) {
             }
 
             data->cv.notify_all();
+        }, 
+        [&]{ 
+            show_confirm_modal = false; 
+        }
+    );
 
+
+    /* Init menu:
+    - Use a container to keep focus through the entire render.
+      If a menu component is embeded in a slew of elements, it becomes static
+    */
+    MenuOption option;
+
+    auto menu_component = BonsaiMenu::menu(&screen, data, &selected, default_path, option);
+    menu_component = CatchEvent(menu_component, [data, &scanner, &show_confirm_modal](Event event) {
+        if (event == Event::Delete) {
+            show_confirm_modal = true;
             return true;
         }
         return false;
@@ -116,6 +128,8 @@ int main(int argc, char* argv[]) {
             pie_component->Render()
         });
     });
+
+    window |= Modal(confirm_modal, &show_confirm_modal);;
 
     // Quit with q
     auto app = CatchEvent(window, [&](Event event) {
