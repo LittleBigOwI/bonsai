@@ -5,6 +5,7 @@
 
 #include <cmath>
 #include <map>
+#include <string>
 
 void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int r1, int r2, int r_inner, double start_deg, double sweep_deg, const std::string& label, const Color& color, const Color& text_color) {
     if (sweep_deg <= 0.0)
@@ -371,6 +372,11 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* sca
 
             // For some reason -4 centers text better
             c.DrawText((w / 2 - label.size() / 2) - 4, h / 2, label);
+
+            // Scanner status
+            if(!scanner->isDone()) {
+                c.DrawText(w  - 21, 0, "Scanning...", [](Pixel& p) { p.foreground_color = Color::CornflowerBlue; });
+            }           
 
         }) | flex;
     });
