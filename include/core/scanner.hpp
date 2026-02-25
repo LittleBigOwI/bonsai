@@ -20,12 +20,20 @@ namespace fs = std::filesystem;
 
 class Scanner {
 public:
+    /* ScannerRemoveResult
+    - Purely used for error messages and error codes
+    */
+    struct ScannerRemoveResult {
+        std::string reason;
+        bool failed;
+    };
+
     Scanner(const fs::path& _path) : path(_path) {};
 
     void scan();
     void stop();
     bool isDone();
-    bool remove(const fs::path& path);
+    ScannerRemoveResult remove(const fs::path& path);
 
     uint64_t get(const fs::path& path);
     

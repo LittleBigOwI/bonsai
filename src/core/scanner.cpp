@@ -3,9 +3,6 @@
 #include <linux/magic.h>
 #include <sys/statfs.h>
 #include <sys/stat.h>
-#include <thread>
-
-#include <iostream>
 
 bool Scanner::isVirtualFs(const fs::path& path) {
     std::string strPath = path.string();
@@ -90,12 +87,12 @@ uint64_t Scanner::get(const fs::path& path) {
     return 0;
 }
 
-bool Scanner::remove(const fs::path& path) {
+Scanner::ScannerRemoveResult Scanner::remove(const fs::path& path) {
     {
         std::lock_guard<std::mutex> lock(stop_mutex);
         
         if (!this->done) {
-            return false;
+            return ScannerRemoveResult{"Scanner hasn't completed yet.", true};
         }
     }
 
@@ -118,7 +115,7 @@ bool Scanner::remove(const fs::path& path) {
     } catch (const fs::filesystem_error&) {}
 
     if (ec) {
-        return false;
+        return ScannerRemoveResult{ec.message(), true};;
     }
 
     {
@@ -142,7 +139,7 @@ bool Scanner::remove(const fs::path& path) {
         dir_sizes.erase(target);
     }
 
-    return true;
+    return ScannerRemoveResult{"", false};;
 }
 
 void Scanner::scan() {

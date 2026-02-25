@@ -21,6 +21,7 @@ set(SRC
 
     src/ui/menu.cpp
     src/ui/modal_confirm.cpp
+    src/ui/modal_error.cpp
     src/ui/piechart.cpp
 )
 

@@ -1,4 +1,5 @@
 #include "../include/ui/modal_confirm.hpp"
+#include "../include/ui/modal_error.hpp"
 #include "../include/config/config.hpp"
 #include "../include/core/app_data.hpp"
 #include "../include/core/scanner.hpp"
@@ -56,13 +57,16 @@ int main(int argc, char* argv[]) {
     data->path = std::make_shared<std::string>(default_path);
     data->selected = std::make_shared<int>(0);
 
-    /* Init confirm modal
+    /* Init confirm & error modals
     - Allow quitting modal with button
     - Allow quitting modal with escape key
     */
     bool show_confirm_modal = false;
+    bool show_error_modal = false;
+    Scanner::ScannerRemoveResult result = Scanner::ScannerRemoveResult{"", false};
+    
     auto confirm_modal = BonsaiModalConfirm::confirm(
-        [data, &scanner, &show_confirm_modal](){
+        [data, &scanner, &result, &show_confirm_modal, &show_error_modal](){
             fs::path selected_path;
 
             {
@@ -70,8 +74,13 @@ int main(int argc, char* argv[]) {
                 selected_path = (*data->menu_entries)[*data->selected].path;
             }
 
-            scanner.remove(selected_path);
-            show_confirm_modal = false; 
+            result = scanner.remove(selected_path);
+
+            if(result.failed) {
+                show_error_modal = true;
+            }
+
+            show_confirm_modal = false;
 
             {
                 // Wake up both pie and menu on change
@@ -96,6 +105,20 @@ int main(int argc, char* argv[]) {
         return false;
     });
 
+    auto error_modal = BonsaiModalError::error(result.reason,
+        [&show_error_modal](){
+            show_error_modal = false;
+        }
+    );
+
+    error_modal = CatchEvent(error_modal, [&show_error_modal](Event event) {
+        if(event == Event::Escape) {
+            show_error_modal = false;
+            return true;
+        }
+
+        return false;
+    });
 
     /* Init menu:
     - Use a container to keep focus through the entire render.
@@ -172,7 +195,8 @@ int main(int argc, char* argv[]) {
         });
     });
 
-    window |= Modal(confirm_modal, &show_confirm_modal);;
+    window |= Modal(confirm_modal, &show_confirm_modal);
+    window |= Modal(error_modal, &show_error_modal);
 
     // Quit with q
     auto app = CatchEvent(window, [&](Event event) {
