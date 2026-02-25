@@ -375,7 +375,7 @@ Component BonsaiPie::pie(std::shared_ptr<AppData::BonsaiData> data, Scanner* sca
 
             // Scanner status
             if(!scanner->isDone()) {
-                c.DrawText(w  - 21, 0, "Scanning...", [](Pixel& p) { p.foreground_color = Color::CornflowerBlue; });
+                c.DrawText(w  - 21, 0, "Scanning...", [](Pixel& p) { p.foreground_color = Color::White; });
             }           
 
         }) | flex;
