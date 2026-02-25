@@ -14,8 +14,6 @@
 #include <iostream>
 #include <thread>
 
-namespace fs = std::filesystem;
-
 /* TODO: bug? (can't reproduce anymore...)
 -> scanner isn't finished.
 -> menu scans for a folder, and updates sizes in list
@@ -25,6 +23,9 @@ namespace fs = std::filesystem;
 
 -> Maybe fixable with callback on scan completed (update render on complete) since this only happens when scanner is done
 */
+
+namespace fs = std::filesystem;
+
 int main(int argc, char* argv[]) {
     using namespace ftxui;
 

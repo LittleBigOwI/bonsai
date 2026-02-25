@@ -40,7 +40,7 @@ uint64_t Scanner::computeDirSizes(const fs::path& dir) {
 
     uint64_t total_size = 0;
 
-    // Some of these entry types can cause loops in scanning anf have no real value
+    // Some of these entry types can cause loops in scanning and have no real value
     if (!fs::exists(dir) || !fs::is_directory(dir) || isVirtualFs(dir))
         return 0;
 

@@ -1,4 +1,4 @@
-/* MENU LOGIC
+/* MENU
 New menu structure: no class inheriting, just using base ftxui components (more maintainable)
 This version of the file is a standalone version (no piechart, but full contents)
 Note that directory sizes aren't computed (scanner's job)

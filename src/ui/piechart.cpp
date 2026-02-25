@@ -3,9 +3,9 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
+#include <string>
 #include <cmath>
 #include <map>
-#include <string>
 
 void BonsaiPie::drawAngledBlockEllipseRingOffset(Canvas& c, int cx, int cy, int r1, int r2, int r_inner, double start_deg, double sweep_deg, const std::string& label, const Color& color, const Color& text_color) {
     if (sweep_deg <= 0.0)

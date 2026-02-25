@@ -1,12 +1,12 @@
-/* SCANNER CLASS
+/* SCANNER
 Explanation:
 - This class recursively scans a filesystem path and computes the total sizes of directories.
 - It avoids counting the same inode twice (to handle hard links) using the `visited` set.
 - Thread-safe access to the `dir_sizes` map using a mutex.
 - Virtual filesystems (like /proc, /sys) and network shares (NFS, SMB) are ignored.
 - Public interface includes:
-    - `scan()` to start scanning the root path.
-    - `get(path)` to retrieve the total size of a directory (thread-safe).
+    - scan() to start scanning the root path.
+    - get(path) to retrieve the total size of a directory (thread-safe).
 */
 
 #pragma once

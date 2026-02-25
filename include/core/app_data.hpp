@@ -1,3 +1,7 @@
+/* APP DATA
+- Shared data between all bonsai components
+*/
+
 #pragma once
 
 #include <ftxui/screen/color.hpp>

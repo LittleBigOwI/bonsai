@@ -1,4 +1,4 @@
-/* CONFIG MANAGEMENT FOR BONSAI
+/* CONFIG
 Explanation:
 - This class handles loading Bonsai's configuration from ~/.config/bonsai/bonsai.conf
 - It provides default values if the file doesn't exist

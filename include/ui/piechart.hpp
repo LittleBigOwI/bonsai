@@ -1,4 +1,4 @@
-/* PIE LOGIC
+/* PIE
 New pie structure: no class inheriting, just using base ftxui components (more maintainable)
 This version of the file is a standalone version (no menu, but full contents)
 Note that directory sizes aren't computed (scanner's job)
