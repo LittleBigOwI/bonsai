@@ -5,6 +5,9 @@
 #include "../include/ui/piechart.hpp"
 #include "../include/ui/menu.hpp"
 
+#include <filesystem>
+#include <ftxui/component/component.hpp>
+#include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
 
 #include <iostream>
@@ -53,7 +56,10 @@ int main(int argc, char* argv[]) {
     data->path = std::make_shared<std::string>(default_path);
     data->selected = std::make_shared<int>(0);
 
-    // Init confirm modal
+    /* Init confirm modal
+    - Allow quitting modal with button
+    - Allow quitting modal with escape key
+    */
     bool show_confirm_modal = false;
     auto confirm_modal = BonsaiModalConfirm::confirm(
         [data, &scanner, &show_confirm_modal](){
@@ -81,19 +87,56 @@ int main(int argc, char* argv[]) {
         }
     );
 
+    confirm_modal = CatchEvent(confirm_modal, [&show_confirm_modal](Event event) {
+        if(event == Event::Escape) {
+            show_confirm_modal = false;
+            return true;
+        }
+
+        return false;
+    });
+
 
     /* Init menu:
     - Use a container to keep focus through the entire render.
       If a menu component is embeded in a slew of elements, it becomes static
+    - Allow going back in tree with escape or backspace keys
     */
     MenuOption option;
 
     auto menu_component = BonsaiMenu::menu(&screen, data, &selected, default_path, option);
-    menu_component = CatchEvent(menu_component, [data, &scanner, &show_confirm_modal](Event event) {
+    menu_component = CatchEvent(menu_component, [data, &scanner, &default_path, &show_confirm_modal](Event event) {
         if (event == Event::Delete) {
             show_confirm_modal = true;
             return true;
         }
+
+        if(event == Event::Backspace || event == Event::Escape) {
+            std::string new_path;
+            {
+                std::lock_guard<std::mutex> lock(data->menu_mutex);
+
+                if(fs::equivalent(*data->path, default_path)) {
+                    return true;
+                }
+                
+                std::filesystem::path p(*data->path);
+                new_path = p.parent_path().string();
+                
+                *data->path = new_path;
+            }
+
+            {
+                // Wake up both pie and menu on change
+                std::lock_guard<std::mutex> lock(data->cv_mutex);
+                data->menu_path_changed = true;
+                data->pie_path_changed = true;
+            }
+
+            data->cv.notify_all();
+            return true;
+        }
+
         return false;
     });
     
