@@ -4,7 +4,7 @@ Bonsai is a terminal user interface (TUI) remake of the GNOME Baobab disk usage 
 It provides a lightweight, fast, and visually structured way to explore disk usage on Linux systems directly in the terminal.
 
 <p align="center">
-  <img src="img/app.gif" alt="App preview" width="600">
+  <img src="img/app.gif" alt="App preview" width="640">
 </p>
 
 ## Features
