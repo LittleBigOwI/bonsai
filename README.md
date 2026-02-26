@@ -10,6 +10,7 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 ## Features
 
 - Navigable sidebar displaying folder sizes, sorted by a scanning algorithm
+- Responsive UI
 - Pie chart visualization similar to GNOME Baobab:
   - Multiple rings representing nested directories
   - Color-coded sections for files and folders
@@ -22,6 +23,12 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 - User customization via configuration file
 - Ability to remove files / folders
 
+> [!TIP]
+> You can check the scan progress in the top-right corner of your terminal.
+> - If a status message is visible → the scanner is still running.
+> - If nothing is displayed → the scan has completed.
+> - The full pie chart is only displayed when the scanner has completed.
+
 ## Planned Features
 
 - Ability to search for folders
@@ -29,28 +36,32 @@ It provides a lightweight, fast, and visually structured way to explore disk usa
 - Windows port?
 
 ## Dependencies
+Before compiling, make sure you have:
 
-Before running, make sure you have:
-
-- A terminal that supports RGB color coding
-- CMake
-- A C compiler
-- Xdd
+- rgb compliant terminal
+- cmake and a c compiler
+- xxd (usually installed if you have vim)
 
 ## Usage
 
 ### Keyboard Controls
 
-- **`q`** → Quit
-- **Backspace / Escape** → Go back a folder
-- **Up / Down arrows** → Navigate the menu
-- **Enter** → Select a folder in the menu or a button in a modal
-- **Escape** → Exit a modal
+- `Q` → quit
+- `BACKSPACE / ESCAPE` → go up a folder
+- `RETURN` → go down a folder
+- `UP / DOWN` arrows → navigate menu
+- `RIGHT / LEFT` arrows → resize sidebar
+- `ESCAPE` → if prompted: exit a modal
+- `RETURN` → if prompted: select button in a modal
+- `RIGHT / LEFT` arrows → if prompted: navigate modal buttons
+
 
 ### Mouse Controls
+> [!WARNING]
+> This app is designed to be keyboard-only, but ftxui does provide some mouse controls
 
-- **Scroll** → Navigate up and down in the menu
-- **Click** → Select a button in a modal
+- `SCROLL` → navigate menu
+- `LEFT CLICK` → if promted: select button in a modal
 
 ## Installation
 ### Arch Linux (AUR)
@@ -59,6 +70,9 @@ You can install Bonsai directly from the AUR:
 ```bash
 # Using an AUR helper like yay
 yay -S bonsai
+
+# Using an AUR helper like paru
+paru -S bonsai
 ```
 
 ### Other Linux distributions

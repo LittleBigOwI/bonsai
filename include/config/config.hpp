@@ -58,6 +58,62 @@ public:
         return instance;
     }
 
+    /* Save the config file:
+    - If user resizes the sidebar, then it's saved here
+    - That is the only thing that can change programmatically
+    - In case any other variables change programmatically in the future, rewrite everything.
+    */
+    bool writeToFile() const {
+        std::string path = getUserConfigPath();
+        if (path.empty()) return false;
+
+        fs::path config_dir = fs::path(path).parent_path();
+        if (!fs::exists(config_dir)) {
+            if (!fs::create_directories(config_dir))
+                return false;
+        }
+
+        std::ofstream out(path, std::ios::trunc);
+        if (!out.is_open()) return false;
+
+        out << "SIDEBAR_WIDTH=" << SIDEBAR_WIDTH << "\n";
+
+        out << "SIDEBAR_SELECTED_FOLDER_ICON=\""
+            << SIDEBAR_SELECTED_FOLDER_ICON << "\"\n";
+
+        out << "SIDEBAR_SELECTED_FILE_ICON=\""
+            << SIDEBAR_SELECTED_FILE_ICON << "\"\n";
+
+        out << "SIDEBAR_FOLDER_ICON=\""
+            << SIDEBAR_FOLDER_ICON << "\"\n";
+
+        out << "SIDEBAR_FILE_ICON=\""
+            << SIDEBAR_FILE_ICON << "\"\n";
+
+        out << "SIDEBAR_BACK_ICON=\""
+            << SIDEBAR_BACK_ICON << "\"\n";
+
+        out << "CHART_MAX_SIZE_THRESHOLD_PERCENTAGE="
+            << CHART_MAX_SIZE_THRESHOLD_PERCENTAGE << "\n";
+
+        out << "CHART_MAX_GENERATIONS="
+            << CHART_MAX_GENERATIONS << "\n";
+
+        out << "CHART_DIM_FACTOR="
+            << CHART_DIM_FACTOR << "\n\n";
+
+        out << "CHART_COLORS=[\n";
+        for (const auto& color : CHART_COLORS) {
+            out << "    {" 
+                << color[0] << "," 
+                << color[1] << "," 
+                << color[2] << "}\n";
+        }
+        out << "]\n";
+
+        return true;
+    }
+
 private:
     // Returns path to ~/.config/bonsai/bonsai.conf or empty string if HOME not set
     inline static std::string getUserConfigPath() {

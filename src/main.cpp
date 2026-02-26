@@ -176,35 +176,42 @@ int main(int argc, char* argv[]) {
     auto pie_component = BonsaiPie::pie(data, &scanner, default_path);
     std::thread pie_thread(BonsaiPie::worker, &screen, data, &scanner, default_path);
 
-    // Init main UI
-    auto window = Renderer(menu_container, [&] {
+    auto left = Renderer(menu_container, [&] {
         std::lock_guard<std::mutex> lock_m(data->menu_mutex);
-        std::lock_guard<std::mutex> lock_p(data->pie_mutex);
-    
-        return hbox({
-            vbox({
-                text(" "),
-                text("Explorer") | center | bold,
-                separator(),
-                hbox({
-                    menu_component->Render() | size(WIDTH, EQUAL, config.SIDEBAR_WIDTH) | frame,
-                    text(" ")
-                })
-            }),
+
+        return vbox({
+            text(" "),
+            text("Explorer") | center | bold,
             separator(),
-            pie_component->Render()
+            hbox({
+                menu_component->Render() | frame | flex,
+                text(" ")
+            })
         });
     });
+
+    auto window = ResizableSplitLeft(left, pie_component, &config.SIDEBAR_WIDTH);
 
     window |= Modal(confirm_modal, &show_confirm_modal);
     window |= Modal(error_modal, &show_error_modal);
 
-    // Quit with q
+    // Quit with q, allow sidebar resize with arrow keys
     auto app = CatchEvent(window, [&](Event event) {
         if (event == Event::Character('q') || event == Event::Character('Q')) {
             screen.Exit();
             return true;
         }
+
+        if(event == Event::ArrowRight && !show_confirm_modal && !show_error_modal) {
+            config.SIDEBAR_WIDTH += 1;
+            return true;
+        }
+
+        if(event == Event::ArrowLeft && !show_confirm_modal && !show_error_modal) {
+            config.SIDEBAR_WIDTH -= 1;
+            return true;
+        }
+
         return false;
     });
 
@@ -215,6 +222,9 @@ int main(int argc, char* argv[]) {
     // Stop app
     scanner.stop();
     AppData::stop(data);
+
+    // Save config
+    config.writeToFile();
 
     scanner_thread.join();
     menu_thread.join();
