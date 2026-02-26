@@ -3,6 +3,7 @@
 #include "../../include/config/config.hpp"
 #include "../../include/utils/format.hpp"
 
+#include <filesystem>
 #include <string>
 #include <cmath>
 #include <map>
@@ -80,7 +81,7 @@ void BonsaiPie::collectEntries(const fs::path& dir, std::vector<EntryInfo>& entr
     if (current_depth > max_depth) return;
 
     try {
-        for (const auto& entry : fs::directory_iterator(dir)) {
+        for (const auto& entry : fs::directory_iterator(dir, fs::directory_options::skip_permission_denied)) {
             if (fs::is_symlink(entry.path()))
                 continue;
 
@@ -241,7 +242,7 @@ void BonsaiPie::worker(ScreenInteractive* screen, std::shared_ptr<AppData::Bonsa
             /* In these two code blocks, false is the logic to check wether the slice is selected
             - selected can be -1 because we manually add a back entry for non default_dir paths
             */ 
-            if(selected != -1 && entry.depth == 0 && entries[selected].depth == 0) {
+            if(selected != -1 && entry.depth == 0 && selected < entries.size() && entries[selected].depth == 0) {
                 color = fs::equivalent(entry.path, entries[selected].path) ? Color::White : color;
                 text_color = fs::equivalent(entry.path, entries[selected].path) ? Color::Black : text_color;
             }
