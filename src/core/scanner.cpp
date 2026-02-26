@@ -1,5 +1,6 @@
 #include "../../include/core/scanner.hpp"
 
+#include <filesystem>
 #include <linux/magic.h>
 #include <sys/statfs.h>
 #include <sys/stat.h>
@@ -100,9 +101,15 @@ Scanner::ScannerRemoveResult Scanner::remove(const fs::path& path) {
 
     uint64_t removed_size = 0;
 
-    {
-        std::lock_guard<std::mutex> lock(map_mutex);
-        removed_size = dir_sizes[path.string()];
+    if(fs::is_directory(path)) {
+        {
+            std::lock_guard<std::mutex> lock(map_mutex);
+            removed_size = dir_sizes[path.string()];
+        }
+    } else {
+        std::error_code ec;
+        removed_size = fs::file_size(path, ec);
+        if (ec) removed_size = 0;
     }
 
     std::error_code ec;
