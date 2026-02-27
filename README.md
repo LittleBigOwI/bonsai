@@ -54,7 +54,7 @@ Before compiling, make sure you have:
 - `ESCAPE` → if prompted: exit a modal
 - `RETURN` → if prompted: select button in a modal
 - `RIGHT / LEFT` arrows → if prompted: navigate modal buttons
-
+- `SUPPR` → delete the selected file / folder
 
 ### Mouse Controls
 > [!WARNING]
